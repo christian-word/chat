@@ -1,115 +1,136 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Чат с уведомлениями</title>
+  <title>Чат со звуковыми уведомлениями</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
+      max-width: 800px;
       margin: 0 auto;
       padding: 20px;
       background-color: #f5f5f5;
     }
-    h1 {
-      text-align: center;
-      color: #333;
+    #chat-container {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
     }
     #messages {
-      height: 400px;
-      border: 1px solid #ddd;
-      padding: 10px;
-      margin-bottom: 10px;
-      background: white;
+      height: 500px;
       overflow-y: auto;
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid #ddd;
       border-radius: 5px;
+      background-color: #fafafa;
     }
     .message {
       margin-bottom: 10px;
-      padding: 8px;
+      padding: 8px 12px;
       border-radius: 5px;
-      background: #e3f2fd;
+      background-color: #e3f2fd;
+      max-width: 70%;
+    }
+    .message.own {
+      margin-left: auto;
+      background-color: #dcf8c6;
     }
     .message .user {
       font-weight: bold;
       color: #1976d2;
     }
+    .message.own .user {
+      color: #689f38;
+    }
     .message .time {
-      font-size: 0.8em;
+      font-size: 0.75em;
       color: #666;
+      display: block;
+      margin-top: 3px;
     }
-    #messageForm {
+    #message-form {
       display: flex;
       gap: 10px;
-      margin-bottom: 10px;
     }
-    #messageInput {
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    #send-button {
+      padding: 10px 20px;
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #user-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    #username-input {
       flex: 1;
       padding: 10px;
       border: 1px solid #ddd;
       border-radius: 5px;
     }
-    #sendButton {
-      padding: 10px 15px;
-      background: #1976d2;
+    #save-username {
+      padding: 10px;
+      background-color: #4caf50;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
-    #controls {
-      display: flex;
-      gap: 10px;
+    #sound-alert {
+      display: none;
+      padding: 10px;
+      background-color: #ffeb3b;
+      border-radius: 5px;
       margin-top: 10px;
-    }
-    #userNameInput {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-    #saveNameButton, #toggleSound {
-      padding: 10px 15px;
-      background: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #toggleSound.muted {
-      background: #f44336;
+      text-align: center;
     }
   </style>
-</head>
-<body>
-  <div class="chat-container">
-    <h1>Чат с уведомлениями</h1>
-    <div id="messages"></div>
-    <form id="messageForm">
-      <input type="text" id="messageInput" placeholder="Ваше сообщение..." required>
-      <button type="submit" id="sendButton">Отправить</button>
-    </form>
-    <div id="controls">
-      <input type="text" id="userNameInput" placeholder="Ваше имя">
-      <button id="saveNameButton">Сохранить имя</button>
-      <button id="toggleSound">🔔 Звук включён</button>
-    </div>
-  </div>
-
-  <!-- Скрытый аудиоэлемент для уведомлений -->
+  <!-- Звуковое уведомление из GitHub -->
   <audio id="notification-sound" preload="auto">
     <source src="https://github.com/christian-word/chat/blob/main/0.mp3?raw=true" type="audio/mpeg">
   </audio>
+</head>
+<body>
+  <div id="chat-container">
+    <h1>Чат со звуковыми уведомлениями</h1>
+    
+    <div id="user-controls">
+      <input type="text" id="username-input" placeholder="Введите ваше имя">
+      <button id="save-username">Сохранить</button>
+    </div>
+    
+    <div id="messages"></div>
+    
+    <form id="message-form">
+      <input type="text" id="message-input" placeholder="Введите сообщение..." autocomplete="off">
+      <button type="submit" id="send-button">Отправить</button>
+    </form>
+    
+    <div id="sound-alert">
+      Звуковые уведомления отключены. Нажмите здесь, чтобы разрешить.
+    </div>
+  </div>
 
-
-  
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
   <script>
-    // Конфигурация Firebase (замените на свою!)
+    // Конфигурация Firebase (замените на свою)
     const firebaseConfig = {
       apiKey: "AIzaSyCxhsQhCppXDJshUBygMcrdtl4HgN8vDX8",
       authDomain: "simplechat-5f140.firebaseapp.com",
@@ -125,105 +146,119 @@
     const database = firebase.database();
 
     // Элементы DOM
-    const messagesContainer = document.getElementById("messages");
-    const messageInput = document.getElementById("messageInput");
-    const sendButton = document.getElementById("sendButton");
-    const userNameInput = document.getElementById("userNameInput");
-    const saveNameButton = document.getElementById("saveNameButton");
-    const toggleSoundButton = document.getElementById("toggleSound");
-    const notificationSound = document.getElementById("notificationSound");
+    const messagesContainer = document.getElementById('messages');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const usernameInput = document.getElementById('username-input');
+    const saveUsernameBtn = document.getElementById('save-username');
+    const notificationSound = document.getElementById('notification-sound');
+    const soundAlert = document.getElementById('sound-alert');
 
     // Состояние приложения
-    let userName = localStorage.getItem("chatUserName") || "Аноним";
+    let username = localStorage.getItem('chatUsername') || 'Аноним';
     let isSoundEnabled = true;
-    let isWindowFocused = true;
 
     // Инициализация интерфейса
-    userNameInput.value = userName;
+    usernameInput.value = username;
     
-    // Проверка видимости окна
-    window.addEventListener("focus", () => { isWindowFocused = true; });
-    window.addEventListener("blur", () => { isWindowFocused = false; });
+    // Проверка поддержки звука
+    function checkSoundSupport() {
+      notificationSound.play()
+        .then(() => {
+          notificationSound.pause();
+          notificationSound.currentTime = 0;
+          soundAlert.style.display = 'none';
+        })
+        .catch(() => {
+          soundAlert.style.display = 'block';
+        });
+    }
+    
+    // Инициализация звука при первом взаимодействии
+    document.addEventListener('click', () => {
+      checkSoundSupport();
+    }, { once: true });
 
     // Сохранение имени пользователя
-    saveNameButton.addEventListener("click", () => {
-      userName = userNameInput.value.trim() || "Аноним";
-      localStorage.setItem("chatUserName", userName);
-      alert(`Имя сохранено: ${userName}`);
-    });
-
-    // Переключение звука
-    toggleSoundButton.addEventListener("click", () => {
-      isSoundEnabled = !isSoundEnabled;
-      if (isSoundEnabled) {
-        toggleSoundButton.textContent = "🔔 Звук включён";
-        toggleSoundButton.classList.remove("muted");
-      } else {
-        toggleSoundButton.textContent = "🔕 Звук выключен";
-        toggleSoundButton.classList.add("muted");
-      }
+    saveUsernameBtn.addEventListener('click', () => {
+      username = usernameInput.value.trim() || 'Аноним';
+      localStorage.setItem('chatUsername', username);
+      alert(`Имя сохранено: ${username}`);
     });
 
     // Отправка сообщения
-    messageForm.addEventListener("submit", (e) => {
+    messageForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const text = messageInput.value.trim();
-      if (!text) return;
-
-      const message = {
-        user: userName,
-        text: text,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-      };
-
-      database.ref("messages").push(message);
-      messageInput.value = "";
-    });
-
-    // Получение сообщений
-    database.ref("messages").orderByChild("timestamp").on("child_added", (snapshot) => {
-      const message = snapshot.val();
-      displayMessage(message);
+      const message = messageInput.value.trim();
       
-      // Воспроизводим звук, если:
-      // 1. Это не наше сообщение
-      // 2. Звук включен
-      // 3. Окно не в фокусе (или всегда - на ваше усмотрение)
-      if (message.user !== userName && isSoundEnabled && !isWindowFocused) {
-        playNotificationSound();
+      if (message) {
+        // Сохраняем сообщение в Firebase
+        database.ref('messages').push({
+          text: message,
+          user: username,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+        messageInput.value = '';
       }
     });
 
-    // Отображение сообщения
-    function displayMessage(message) {
-      const messageElement = document.createElement("div");
-      messageElement.className = "message";
-      messageElement.innerHTML = `
-        <span class="user">${message.user}</span>: 
-        <span>${message.text}</span>
-        <div class="time">${formatTime(message.timestamp)}</div>
-      `;
-      messagesContainer.appendChild(messageElement);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
     // Воспроизведение звука уведомления
     function playNotificationSound() {
+      if (!isSoundEnabled) return;
+      
       notificationSound.currentTime = 0;
-      notificationSound.play().catch(e => {
-        console.log("Не удалось воспроизвести звук:", e);
-      });
+      notificationSound.play()
+        .catch(() => {
+          soundAlert.style.display = 'block';
+        });
+    }
+
+    // Отображение сообщения
+    function displayMessage(snapshot) {
+      const message = snapshot.val();
+      const messageElement = document.createElement('div');
+      
+      messageElement.classList.add('message');
+      if (message.user === username) {
+        messageElement.classList.add('own');
+      }
+      
+      messageElement.innerHTML = `
+        <span class="user">${message.user}</span>
+        <span class="text">${message.text}</span>
+        <span class="time">${formatTime(message.timestamp)}</span>
+      `;
+      
+      messagesContainer.appendChild(messageElement);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      
+      // Воспроизводим звук для новых сообщений других пользователей
+      if (message.user !== username) {
+        playNotificationSound();
+      }
     }
 
     // Форматирование времени
     function formatTime(timestamp) {
-      if (!timestamp) return "";
+      if (!timestamp) return '';
       const date = new Date(timestamp);
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    // Запрос разрешения на уведомления
-    Notification.requestPermission();
+    // Получение сообщений из Firebase
+    database.ref('messages')
+      .orderByChild('timestamp')
+      .on('child_added', displayMessage);
+
+    // Обработка клика по уведомлению о звуке
+    soundAlert.addEventListener('click', () => {
+      notificationSound.play()
+        .then(() => {
+          soundAlert.style.display = 'none';
+          notificationSound.pause();
+          notificationSound.currentTime = 0;
+        });
+    });
   </script>
 </body>
 </html>
