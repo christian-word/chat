@@ -11,6 +11,7 @@
       --own-message-color: #dcf8c6;
       --other-message-color: #e3f2fd;
       --input-bg: #f0f0f0;
+      --unread-badge: #ff4444;
     }
     
     * {
@@ -43,11 +44,29 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     
     h1 {
       font-size: 1.3rem;
       text-align: center;
+      flex-grow: 1;
+    }
+    
+    #unread-badge {
+      background-color: var(--unread-badge);
+      color: white;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      margin-left: 10px;
+      display: none;
     }
     
     #user-controls {
@@ -166,18 +185,16 @@
       font-size: 0.9rem;
     }
     
-    /* Анимация уведомления */
+    .pulse {
+      animation: pulse 0.5s ease;
+    }
+    
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.05); }
       100% { transform: scale(1); }
     }
     
-    .pulse {
-      animation: pulse 0.5s ease;
-    }
-    
-    /* Медиазапросы для разных размеров экрана */
     @media (max-width: 480px) {
       .message {
         max-width: 90%;
@@ -205,7 +222,6 @@
       }
     }
   </style>
-  <!-- Звуковое уведомление -->
   <audio id="notification-sound" preload="auto">
     <source src="https://github.com/christian-word/chat/blob/main/0.mp3?raw=true" type="audio/mpeg">
   </audio>
@@ -214,6 +230,7 @@
   <div id="app">
     <header>
       <h1>Мобильный чат</h1>
+      <div id="unread-badge"></div>
     </header>
     
     <div id="user-controls">
@@ -233,12 +250,10 @@
     </div>
   </div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
   <script>
-    // Конфигурация Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCxhsQhCppXDJshUBygMcrdtl4HgN8vDX8",
       authDomain: "simplechat-5f140.firebaseapp.com",
@@ -249,11 +264,9 @@
       appId: "1:1006705904618:web:8bcba40e4d6897e1e54093"
     };
 
-    // Инициализация Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Элементы DOM
     const messagesContainer = document.getElementById('messages');
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
@@ -261,15 +274,15 @@
     const saveUsernameBtn = document.getElementById('save-username');
     const notificationSound = document.getElementById('notification-sound');
     const soundAlert = document.getElementById('sound-alert');
+    const unreadBadge = document.getElementById('unread-badge');
 
-    // Состояние приложения
     let username = localStorage.getItem('chatUsername') || 'Аноним';
     let isSoundEnabled = true;
+    let isWindowFocused = true;
+    let unreadCount = 0;
+    let originalTitle = document.title;
+    let titleFlashInterval;
 
-    // Инициализация интерфейса
-    usernameInput.value = username;
-    
-    // Проверка поддержки звука
     function checkSoundSupport() {
       notificationSound.play()
         .then(() => {
@@ -282,40 +295,46 @@
         });
     }
     
-    // Инициализация звука при первом взаимодействии
-    document.addEventListener('click', initSound, { once: true });
-    
     function initSound() {
       checkSoundSupport();
-      // Разрешаем отправку сообщений только после взаимодействия
       messageInput.disabled = false;
       messageInput.placeholder = "Написать сообщение...";
     }
 
-    // Сохранение имени пользователя
-    saveUsernameBtn.addEventListener('click', () => {
-      username = usernameInput.value.trim() || 'Аноним';
-      localStorage.setItem('chatUsername', username);
-      showToast(`Имя сохранено: ${username}`);
-    });
-
-    // Отправка сообщения
-    messageForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const message = messageInput.value.trim();
-      
-      if (message) {
-        // Сохраняем сообщение в Firebase
-        database.ref('messages').push({
-          text: message,
-          user: username,
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-        messageInput.value = '';
+    function updateUnreadBadge() {
+      if (unreadCount > 0) {
+        unreadBadge.style.display = 'flex';
+        unreadBadge.textContent = unreadCount > 9 ? '9+' : unreadCount.toString();
+      } else {
+        unreadBadge.style.display = 'none';
       }
-    });
+    }
 
-    // Воспроизведение звука уведомления
+    function flashTitle(newTitle) {
+      clearInterval(titleFlashInterval);
+      let isFlash = false;
+      
+      titleFlashInterval = setInterval(() => {
+        document.title = isFlash ? originalTitle : newTitle;
+        isFlash = !isFlash;
+      }, 1000);
+    }
+
+    function resetTitle() {
+      clearInterval(titleFlashInterval);
+      document.title = originalTitle;
+      unreadCount = 0;
+      updateUnreadBadge();
+    }
+
+    function scrollToBottom() {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function isNearBottom() {
+      return messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 50;
+    }
+
     function playNotificationSound() {
       if (!isSoundEnabled) return;
       
@@ -326,45 +345,6 @@
         });
     }
 
-    // Отображение сообщения
-    function displayMessage(snapshot) {
-      const message = snapshot.val();
-      const messageElement = document.createElement('div');
-      
-      messageElement.classList.add('message');
-      message.user === username 
-        ? messageElement.classList.add('own')
-        : messageElement.classList.add('other');
-      
-      messageElement.innerHTML = `
-        <span class="user">${message.user}</span>
-        <span class="text">${message.text}</span>
-        <span class="time">${formatTime(message.timestamp)}</span>
-      `;
-      
-      messagesContainer.appendChild(messageElement);
-      scrollToBottom();
-      
-      // Воспроизводим звук для новых сообщений других пользователей
-      if (message.user !== username) {
-        playNotificationSound();
-        messageElement.classList.add('pulse');
-      }
-    }
-
-    // Прокрутка к последнему сообщению
-    function scrollToBottom() {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    // Форматирование времени
-    function formatTime(timestamp) {
-      if (!timestamp) return '';
-      const date = new Date(timestamp);
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-    
-    // Всплывающее уведомление
     function showToast(message) {
       const toast = document.createElement('div');
       toast.textContent = message;
@@ -386,12 +366,82 @@
       }, 2000);
     }
 
-    // Получение сообщений из Firebase
-    database.ref('messages')
-      .orderByChild('timestamp')
-      .on('child_added', displayMessage);
+    function formatTime(timestamp) {
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
 
-    // Обработка клика по уведомлению о звуке
+    function displayMessage(snapshot) {
+      const message = snapshot.val();
+      const messageElement = document.createElement('div');
+      
+      messageElement.classList.add('message');
+      message.user === username 
+        ? messageElement.classList.add('own')
+        : messageElement.classList.add('other');
+      
+      messageElement.innerHTML = `
+        <span class="user">${message.user}</span>
+        <span class="text">${message.text}</span>
+        <span class="time">${formatTime(message.timestamp)}</span>
+      `;
+      
+      messagesContainer.appendChild(messageElement);
+      
+      if (isNearBottom()) {
+        scrollToBottom();
+      }
+      
+      if (message.user !== username) {
+        playNotificationSound();
+        messageElement.classList.add('pulse');
+        
+        if (!isWindowFocused) {
+          unreadCount++;
+          updateUnreadBadge();
+          flashTitle(`(${unreadCount}) Новое сообщение`);
+        }
+      }
+    }
+
+    document.addEventListener('click', initSound, { once: true });
+    
+    window.addEventListener('focus', () => {
+      isWindowFocused = true;
+      resetTitle();
+    });
+    
+    window.addEventListener('blur', () => {
+      isWindowFocused = false;
+    });
+    
+    messagesContainer.addEventListener('scroll', () => {
+      if (isNearBottom()) {
+        resetTitle();
+      }
+    });
+    
+    saveUsernameBtn.addEventListener('click', () => {
+      username = usernameInput.value.trim() || 'Аноним';
+      localStorage.setItem('chatUsername', username);
+      showToast(`Имя сохранено: ${username}`);
+    });
+
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = messageInput.value.trim();
+      
+      if (message) {
+        database.ref('messages').push({
+          text: message,
+          user: username,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+        messageInput.value = '';
+      }
+    });
+
     soundAlert.addEventListener('click', () => {
       notificationSound.play()
         .then(() => {
@@ -401,17 +451,18 @@
         });
     });
     
-    // Блокировка ввода до первого взаимодействия (для iOS)
     messageInput.disabled = true;
     messageInput.placeholder = "Нажмите на экран для активации...";
     
-    // Автофокус на поле ввода
     messageForm.addEventListener('click', () => {
       messageInput.focus();
     });
     
-    // Прокрутка при открытии клавиатуры
     window.addEventListener('resize', scrollToBottom);
+
+    database.ref('messages')
+      .orderByChild('timestamp')
+      .on('child_added', displayMessage);
   </script>
 </body>
 </html>
