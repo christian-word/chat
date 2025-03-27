@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Мобильный чат</title>
+  <title>Мобильный чат с автопрокруткой</title>
   <style>
     :root {
       --primary-color: #1976d2;
@@ -100,6 +100,7 @@
       padding: 10px;
       background-color: #fafafa;
       -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
     
     .message {
@@ -282,8 +283,11 @@
     let unreadCount = 0;
     let originalTitle = document.title;
     let titleFlashInterval;
+    let lastScrollPosition = 0;
+    let isUserScrolling = false;
 
-    function checkSoundSupport() {
+    // Инициализация звука
+    function initSound() {
       notificationSound.play()
         .then(() => {
           notificationSound.pause();
@@ -293,14 +297,76 @@
         .catch(() => {
           soundAlert.style.display = 'block';
         });
-    }
-    
-    function initSound() {
-      checkSoundSupport();
+      
       messageInput.disabled = false;
       messageInput.placeholder = "Написать сообщение...";
     }
 
+    // Прокрутка к последнему сообщению
+    function scrollToBottom(behavior = 'smooth') {
+      if (!isUserScrolling) {
+        messagesContainer.scrollTo({
+          top: messagesContainer.scrollHeight,
+          behavior: behavior
+        });
+      }
+    }
+
+    // Проверка, находится ли пользователь внизу чата
+    function isNearBottom() {
+      return messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+    }
+
+    // Обработчик скролла
+    function handleScroll() {
+      const currentPosition = messagesContainer.scrollTop;
+      isUserScrolling = Math.abs(currentPosition - lastScrollPosition) > 5;
+      lastScrollPosition = currentPosition;
+      
+      // Если пользователь прокрутил вверх, не скроллим автоматически
+      if (!isNearBottom()) {
+        isUserScrolling = true;
+      } else {
+        isUserScrolling = false;
+      }
+    }
+
+    // Отображение сообщения
+    function displayMessage(snapshot) {
+      const message = snapshot.val();
+      const messageElement = document.createElement('div');
+      
+      messageElement.classList.add('message');
+      message.user === username 
+        ? messageElement.classList.add('own')
+        : messageElement.classList.add('other');
+      
+      messageElement.innerHTML = `
+        <span class="user">${message.user}</span>
+        <span class="text">${message.text}</span>
+        <span class="time">${formatTime(message.timestamp)}</span>
+      `;
+      
+      messagesContainer.appendChild(messageElement);
+      
+      // Прокручиваем только если пользователь внизу или это его сообщение
+      if (isNearBottom() || message.user === username) {
+        scrollToBottom();
+      }
+      
+      if (message.user !== username) {
+        playNotificationSound();
+        messageElement.classList.add('pulse');
+        
+        if (!isWindowFocused) {
+          unreadCount++;
+          updateUnreadBadge();
+          flashTitle(`(${unreadCount}) Новое сообщение`);
+        }
+      }
+    }
+
+    // Остальные функции остаются без изменений
     function updateUnreadBadge() {
       if (unreadCount > 0) {
         unreadBadge.style.display = 'flex';
@@ -325,14 +391,6 @@
       document.title = originalTitle;
       unreadCount = 0;
       updateUnreadBadge();
-    }
-
-    function scrollToBottom() {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function isNearBottom() {
-      return messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 50;
     }
 
     function playNotificationSound() {
@@ -372,55 +430,21 @@
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    function displayMessage(snapshot) {
-      const message = snapshot.val();
-      const messageElement = document.createElement('div');
-      
-      messageElement.classList.add('message');
-      message.user === username 
-        ? messageElement.classList.add('own')
-        : messageElement.classList.add('other');
-      
-      messageElement.innerHTML = `
-        <span class="user">${message.user}</span>
-        <span class="text">${message.text}</span>
-        <span class="time">${formatTime(message.timestamp)}</span>
-      `;
-      
-      messagesContainer.appendChild(messageElement);
-      
-      if (isNearBottom()) {
-        scrollToBottom();
-      }
-      
-      if (message.user !== username) {
-        playNotificationSound();
-        messageElement.classList.add('pulse');
-        
-        if (!isWindowFocused) {
-          unreadCount++;
-          updateUnreadBadge();
-          flashTitle(`(${unreadCount}) Новое сообщение`);
-        }
-      }
-    }
-
+    // Инициализация
     document.addEventListener('click', initSound, { once: true });
     
     window.addEventListener('focus', () => {
       isWindowFocused = true;
       resetTitle();
+      // При возвращении на вкладку прокручиваем вниз
+      setTimeout(() => scrollToBottom('auto'), 100);
     });
     
     window.addEventListener('blur', () => {
       isWindowFocused = false;
     });
     
-    messagesContainer.addEventListener('scroll', () => {
-      if (isNearBottom()) {
-        resetTitle();
-      }
-    });
+    messagesContainer.addEventListener('scroll', handleScroll);
     
     saveUsernameBtn.addEventListener('click', () => {
       username = usernameInput.value.trim() || 'Аноним';
@@ -458,7 +482,8 @@
       messageInput.focus();
     });
     
-    window.addEventListener('resize', scrollToBottom);
+    // Инициальная прокрутка вниз
+    setTimeout(() => scrollToBottom('auto'), 500);
 
     database.ref('messages')
       .orderByChild('timestamp')
