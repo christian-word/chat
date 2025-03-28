@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Мобильный чат с автопрокруткой</title>
+  <title>Мобильный чат с эмодзи</title>
   <style>
     :root {
       --primary-color: #1976d2;
@@ -154,6 +154,7 @@
       border-top: 1px solid #eee;
       position: sticky;
       bottom: 0;
+      align-items: center;
     }
     
     #message-input {
@@ -196,6 +197,53 @@
       100% { transform: scale(1); }
     }
     
+    /* Стили для меню эмодзи */
+    #emoji-menu {
+      position: absolute;
+      bottom: 70px;
+      right: 10px;
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: none;
+      width: 250px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .emoji-row {
+      display: flex;
+      justify-content: space-around;
+      margin: 5px 0;
+    }
+    
+    .emoji-row span {
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      transition: transform 0.2s;
+    }
+    
+    .emoji-row span:hover {
+      transform: scale(1.2);
+    }
+    
+    #emoji-picker {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+    
+    #emoji-picker:hover {
+      background: #f0f0f0;
+    }
+    
     @media (max-width: 480px) {
       .message {
         max-width: 90%;
@@ -208,6 +256,12 @@
       #send-button {
         width: 45px;
         height: 45px;
+      }
+      
+      #emoji-menu {
+        width: 100%;
+        right: 0;
+        bottom: 60px;
       }
     }
     
@@ -241,10 +295,26 @@
     
     <div id="messages"></div>
     
-    <form id="message-form">
+    <form id="message-form" style="display: none;">
+      <button type="button" id="emoji-picker">😀</button>
       <input type="text" id="message-input" placeholder="Написать сообщение..." autocomplete="off">
       <button type="submit" id="send-button">→</button>
     </form>
+    
+    <div id="emoji-menu">
+      <div class="emoji-row">
+        <span>😀</span><span>😂</span><span>😍</span><span>😎</span><span>🤩</span>
+      </div>
+      <div class="emoji-row">
+        <span>👍</span><span>👋</span><span>❤️</span><span>🔥</span><span>🎉</span>
+      </div>
+      <div class="emoji-row">
+        <span>🙈</span><span>🤔</span><span>😢</span><span>😡</span><span>🤯</span>
+      </div>
+      <div class="emoji-row">
+        <span>👏</span><span>🙏</span><span>💩</span><span>🤡</span><span>👻</span>
+      </div>
+    </div>
     
     <div id="sound-alert">
       Нажмите для включения звука уведомлений
@@ -276,6 +346,8 @@
     const notificationSound = document.getElementById('notification-sound');
     const soundAlert = document.getElementById('sound-alert');
     const unreadBadge = document.getElementById('unread-badge');
+    const emojiPicker = document.getElementById('emoji-picker');
+    const emojiMenu = document.getElementById('emoji-menu');
 
     let username = localStorage.getItem('chatUsername') || 'Аноним';
     let isSoundEnabled = true;
@@ -286,7 +358,6 @@
     let lastScrollPosition = 0;
     let isUserScrolling = false;
 
-    // Инициализация звука
     function initSound() {
       notificationSound.play()
         .then(() => {
@@ -298,11 +369,9 @@
           soundAlert.style.display = 'block';
         });
       
-      messageInput.disabled = false;
-      messageInput.placeholder = "Написать сообщение...";
+      messageForm.style.display = 'flex';
     }
 
-    // Прокрутка к последнему сообщению
     function scrollToBottom(behavior = 'smooth') {
       if (!isUserScrolling) {
         messagesContainer.scrollTo({
@@ -312,18 +381,15 @@
       }
     }
 
-    // Проверка, находится ли пользователь внизу чата
     function isNearBottom() {
       return messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
     }
 
-    // Обработчик скролла
     function handleScroll() {
       const currentPosition = messagesContainer.scrollTop;
       isUserScrolling = Math.abs(currentPosition - lastScrollPosition) > 5;
       lastScrollPosition = currentPosition;
       
-      // Если пользователь прокрутил вверх, не скроллим автоматически
       if (!isNearBottom()) {
         isUserScrolling = true;
       } else {
@@ -331,7 +397,6 @@
       }
     }
 
-    // Отображение сообщения
     function displayMessage(snapshot) {
       const message = snapshot.val();
       const messageElement = document.createElement('div');
@@ -349,7 +414,6 @@
       
       messagesContainer.appendChild(messageElement);
       
-      // Прокручиваем только если пользователь внизу или это его сообщение
       if (isNearBottom() || message.user === username) {
         scrollToBottom();
       }
@@ -366,7 +430,6 @@
       }
     }
 
-    // Остальные функции остаются без изменений
     function updateUnreadBadge() {
       if (unreadCount > 0) {
         unreadBadge.style.display = 'flex';
@@ -430,13 +493,17 @@
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    // Инициализация
+    function hideKeyboard() {
+      if ('activeElement' in document) {
+        document.activeElement.blur();
+      }
+    }
+
     document.addEventListener('click', initSound, { once: true });
     
     window.addEventListener('focus', () => {
       isWindowFocused = true;
       resetTitle();
-      // При возвращении на вкладку прокручиваем вниз
       setTimeout(() => scrollToBottom('auto'), 100);
     });
     
@@ -446,10 +513,40 @@
     
     messagesContainer.addEventListener('scroll', handleScroll);
     
-    saveUsernameBtn.addEventListener('click', () => {
-      username = usernameInput.value.trim() || 'Аноним';
+    saveUsernameBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const inputValue = usernameInput.value.trim();
+      
+      // Секретная функция очистки чата по паролю
+      if (inputValue === "123211") {
+        // Очищаем Firebase
+        database.ref('messages').remove()
+          .then(() => {
+            // Очищаем экран от сообщений
+            messagesContainer.innerHTML = '';
+            showToast("Чат очищен!");
+            usernameInput.value = '';
+          })
+          .catch((error) => {
+            showToast("Ошибка очистки чата");
+          });
+        return;
+      }
+      
+      // Обычное сохранение имени
+      username = inputValue || 'Аноним';
       localStorage.setItem('chatUsername', username);
       showToast(`Имя сохранено: ${username}`);
+      
+      messageForm.style.display = 'flex';
+      setTimeout(() => messageInput.focus(), 300);
+    });
+
+    usernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveUsernameBtn.click();
+      }
     });
 
     messageForm.addEventListener('submit', (e) => {
@@ -475,19 +572,35 @@
         });
     });
     
-    messageInput.disabled = true;
-    messageInput.placeholder = "Нажмите на экран для активации...";
-    
-    messageForm.addEventListener('click', () => {
-      messageInput.focus();
+    // Управление меню эмодзи
+    emojiPicker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      emojiMenu.style.display = emojiMenu.style.display === 'block' ? 'none' : 'block';
     });
-    
-    // Инициальная прокрутка вниз
+
+    document.querySelectorAll('#emoji-menu span').forEach(emoji => {
+      emoji.addEventListener('click', () => {
+        messageInput.value += emoji.textContent;
+        messageInput.focus();
+        emojiMenu.style.display = 'none';
+      });
+    });
+
+    document.addEventListener('click', () => {
+      emojiMenu.style.display = 'none';
+    });
+
     setTimeout(() => scrollToBottom('auto'), 500);
 
     database.ref('messages')
       .orderByChild('timestamp')
       .on('child_added', displayMessage);
+      
+    if (localStorage.getItem('chatUsername')) {
+      usernameInput.value = localStorage.getItem('chatUsername');
+      username = localStorage.getItem('chatUsername');
+      messageForm.style.display = 'flex';
+    }
   </script>
 </body>
 </html>
