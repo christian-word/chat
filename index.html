@@ -78,34 +78,38 @@
         }
         
         // Отправка сообщения в Ollama
-        async function sendToOllama(message) {
-            addMessage(message, true);
-            userInput.value = '';
-            
-            try {
-                const response = await fetch('http://localhost:11434/api/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: 'llama2', // Замените на нужную модель
-                        prompt: message,
-                        stream: false
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Ошибка HTTP: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                addMessage(data.response, false);
-            } catch (error) {
-                console.error('Ошибка:', error);
-                addMessage(`Произошла ошибка: ${error.message}`, false);
-            }
+async function sendToOllama(message) {
+    addMessage(message, true);
+    userInput.value = '';
+    sendButton.disabled = true;
+    
+    try {
+        const response = await fetch('http://localhost:11434/api/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama2',
+                prompt: message,
+                stream: false
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Ошибка HTTP: ${response.status} ${response.statusText}`);
         }
+        
+        const data = await response.json();
+        addMessage(data.response, false);
+    } catch (error) {
+        console.error('Ошибка:', error);
+        addMessage(`Ошибка подключения к Ollama: ${error.message}\n\nУбедитесь что:\n1. Ollama сервер запущен\n2. Не блокируется CORS\n3. Модель llama2 загружена (ollama pull llama2)`, false);
+    } finally {
+        sendButton.disabled = false;
+    }
+}
         
         // Обработчик кнопки отправки
         sendButton.addEventListener('click', () => {
