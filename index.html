@@ -1,28 +1,27 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Библейский ИИ-ассистент</title>
-    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Chat Bot</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            line-height: 1.6;
+            background-color: #f5f5f5;
         }
-        #chat {
-            height: 500px;
-            border: 1px solid #ddd;
-            padding: 15px;
-            overflow-y: auto;
-            margin-bottom: 15px;
+        #chat-container {
+            background-color: white;
             border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 500px;
+            overflow-y: auto;
         }
-        .user { color: #2c82e0; margin: 10px 0; }
-        .ai { color: #3aaf85; margin: 10px 0; }
-        #input {
+        #user-input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -30,79 +29,100 @@
             margin-bottom: 10px;
         }
         button {
-            background: #4CAF50;
+            background-color: #4CAF50;
             color: white;
             border: none;
             padding: 10px 15px;
             border-radius: 4px;
             cursor: pointer;
         }
-        .loading { color: #7f8c8d; }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20%;
+        }
+        .bot-message {
+            background-color: #f1f1f1;
+            margin-right: 20%;
+        }
     </style>
 </head>
 <body>
-    <h1>Библейский ИИ-ассистент</h1>
-    <div id="chat"></div>
-    <input type="text" id="input" placeholder="Задайте вопрос о Библии...">
-    <button onclick="askAI()">Спросить</button>
-
+    <h1>Ollama Chat Bot</h1>
+    
+    <div id="chat-container"></div>
+    
+    <input type="text" id="user-input" placeholder="Введите ваше сообщение..." autocomplete="off">
+    <button id="send-button">Отправить</button>
+    
     <script>
-        let pipeline;
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
         
-        // Загружаем ИИ-модель при открытии страницы
-        async function loadAI() {
-            addMessage('ai', 'Загружаю ИИ-модель... (это займет 1-2 минуты)');
-            
-            try {
-                pipeline = await transformers.pipeline(
-                    'text-generation', 
-                    'Xenova/llama3-christian'
-                );
-                addMessage('ai', 'Готово! Задавайте ваш вопрос о Библии.');
-            } catch (error) {
-                addMessage('ai', `Ошибка: ${error.message}`);
-            }
+        // Добавление сообщения в чат
+        function addMessage(text, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isUser ? 'user-message' : 'bot-message');
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
-        // Добавляем сообщение в чат
-        function addMessage(role, text) {
-            const chat = document.getElementById('chat');
-            const msg = document.createElement('div');
-            msg.className = role;
-            msg.innerHTML = `<strong>${role === 'user' ? 'Вы' : 'ИИ'}:</strong> ${text}`;
-            chat.appendChild(msg);
-            chat.scrollTop = chat.scrollHeight;
-        }
-        
-        // Задаем вопрос ИИ
-        async function askAI() {
-            const question = document.getElementById('input').value.trim();
-            if (!question || !pipeline) return;
-            
-            addMessage('user', question);
-            document.getElementById('input').value = '';
+        // Отправка сообщения в Ollama
+        async function sendToOllama(message) {
+            addMessage(message, true);
+            userInput.value = '';
             
             try {
-                addMessage('ai', '<span class="loading">ИИ думает...</span>');
-                
-                const response = await pipeline(question, {
-                    max_new_tokens: 150,
-                    temperature: 0.7
+                const response = await fetch('http://localhost:11434/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'llama2', // Замените на нужную модель
+                        prompt: message,
+                        stream: false
+                    })
                 });
                 
-                document.querySelector('#chat .loading').remove();
-                addMessage('ai', response[0].generated_text);
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                addMessage(data.response, false);
             } catch (error) {
-                addMessage('ai', `Ошибка: ${error.message}`);
+                console.error('Ошибка:', error);
+                addMessage(`Произошла ошибка: ${error.message}`, false);
             }
         }
         
-        // Загружаем модель при старте
-        loadAI();
+        // Обработчик кнопки отправки
+        sendButton.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                sendToOllama(message);
+            }
+        });
         
-        // Отправка по Enter
-        document.getElementById('input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') askAI();
+        // Обработчик нажатия Enter
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const message = userInput.value.trim();
+                if (message) {
+                    sendToOllama(message);
+                }
+            }
         });
     </script>
 </body>
