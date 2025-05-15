@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ollama Chat Bot</title>
+    <title>Чат с DeepSeek AI</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,120 +13,170 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
-        #chat-container {
+        .chat-container {
             background-color: white;
-            border-radius: 8px;
+            border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-            height: 500px;
-            overflow-y: auto;
+            overflow: hidden;
         }
-        #user-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        button {
-            background-color: #4CAF50;
+        .chat-header {
+            background-color: #2a65ea;
             color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
         }
-        button:hover {
-            background-color: #45a049;
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
         }
         .message {
             margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 4px;
+            display: flex;
         }
         .user-message {
-            background-color: #e3f2fd;
-            margin-left: 20%;
+            justify-content: flex-end;
         }
-        .bot-message {
-            background-color: #f1f1f1;
-            margin-right: 20%;
+        .ai-message {
+            justify-content: flex-start;
+        }
+        .message-content {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+        .user-message .message-content {
+            background-color: #2a65ea;
+            color: white;
+        }
+        .ai-message .message-content {
+            background-color: #e0e0e0;
+            color: black;
+        }
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            outline: none;
+        }
+        #send-button {
+            background-color: #2a65ea;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        #send-button:hover {
+            background-color: #1a4bb7;
+        }
+        .typing-indicator {
+            display: none;
+            padding: 10px;
+            color: #666;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
-    <h1>Ollama Chat Bot</h1>
-    
-    <div id="chat-container"></div>
-    
-    <input type="text" id="user-input" placeholder="Введите ваше сообщение..." autocomplete="off">
-    <button id="send-button">Отправить</button>
-    
+    <div class="chat-container">
+        <div class="chat-header">Чат с DeepSeek AI</div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message ai-message">
+                <div class="message-content">Привет! Я DeepSeek AI. Чем могу помочь?</div>
+            </div>
+        </div>
+        <div class="typing-indicator" id="typing-indicator">DeepSeek печатает...</div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Введите сообщение...">
+            <button id="send-button">Отправить</button>
+        </div>
+    </div>
+
     <script>
-        const chatContainer = document.getElementById('chat-container');
+        const chatMessages = document.getElementById('chat-messages');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
-        
-        // Добавление сообщения в чат
-        function addMessage(text, isUser) {
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        // 🔑 Вставьте ваш API-ключ DeepSeek (не публикуйте его в открытом доступе!)
+        const DEEPSEEK_API_KEY = "sk-0da27cb883e54d0bb658bd195dab3a7f";
+        const API_URL = "https://api.deepseek.com/v1/chat/completions";
+
+        let conversationHistory = [
+            { role: "system", content: "Ты полезный ИИ-ассистент DeepSeek Chat." },
+            { role: "assistant", content: "Привет! Я DeepSeek AI. Чем могу помочь?" }
+        ];
+
+        function addMessage(message, isUser) {
             const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message');
-            messageDiv.classList.add(isUser ? 'user-message' : 'bot-message');
-            messageDiv.textContent = text;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = message;
+            
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-        
-        // Отправка сообщения в Ollama
-async function sendToOllama(message) {
-    addMessage(message, true);
-    userInput.value = '';
-    sendButton.disabled = true;
-    
-    try {
-        const response = await fetch('http://localhost:11434/api/generate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'llama2',
-                prompt: message,
-                stream: false
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Ошибка HTTP: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        addMessage(data.response, false);
-    } catch (error) {
-        console.error('Ошибка:', error);
-        addMessage(`Ошибка подключения к Ollama: ${error.message}\n\nУбедитесь что:\n1. Ollama сервер запущен\n2. Не блокируется CORS\n3. Модель llama2 загружена (ollama pull llama2)`, false);
-    } finally {
-        sendButton.disabled = false;
-    }
-}
-        
-        // Обработчик кнопки отправки
-        sendButton.addEventListener('click', () => {
+
+        async function sendMessage() {
             const message = userInput.value.trim();
-            if (message) {
-                sendToOllama(message);
+            if (message === '') return;
+            
+            addMessage(message, true);
+            userInput.value = '';
+            
+            conversationHistory.push({ role: "user", content: message });
+            
+            typingIndicator.style.display = 'block';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: conversationHistory,
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка API: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content;
+                
+                conversationHistory.push({ role: "assistant", content: aiResponse });
+                addMessage(aiResponse, false);
+            } catch (error) {
+                console.error('Ошибка:', error);
+                addMessage("⚠️ Ошибка подключения к DeepSeek API. Проверьте ключ и интернет.", false);
+            } finally {
+                typingIndicator.style.display = 'none';
             }
-        });
-        
-        // Обработчик нажатия Enter
+        }
+
+        sendButton.addEventListener('click', sendMessage);
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                const message = userInput.value.trim();
-                if (message) {
-                    sendToOllama(message);
-                }
+                sendMessage();
             }
         });
     </script>
