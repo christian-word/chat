@@ -10,30 +10,47 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            line-height: 1.6;
         }
         .input-group {
             margin-bottom: 15px;
         }
-        input, button {
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, button, select {
             padding: 10px;
             margin: 5px 0;
             width: 100%;
             box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         button {
             background-color: #4285f4;
             color: white;
             border: none;
             cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3367d6;
         }
         button:disabled {
             background-color: #cccccc;
+            cursor: not-allowed;
         }
         #response {
             margin-top: 20px;
             padding: 15px;
             border: 1px solid #ddd;
+            border-radius: 4px;
             min-height: 100px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
         }
         .loader {
             border: 4px solid #f3f3f3;
@@ -44,6 +61,9 @@
             animation: spin 1s linear infinite;
             margin: 20px auto;
             display: none;
+        }
+        .error {
+            color: #d32f2f;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -57,62 +77,85 @@
     <div class="input-group">
         <label for="apiKey">Ваш API-ключ Hugging Face:</label>
         <input type="password" id="apiKey" placeholder="Введите hf_...">
+        <small>Получить ключ можно на <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a></small>
+    </div>
+    
+    <div class="input-group">
+        <label for="model">Выберите модель:</label>
+        <select id="model">
+            <option value="gpt2">GPT-2 (быстрая для теста)</option>
+            <option value="meta-llama/Meta-Llama-3-8B-Instruct">Llama 3 (8B)</option>
+            <option value="mistralai/Mistral-7B-Instruct-v0.2">Mistral 7B</option>
+        </select>
     </div>
     
     <div class="input-group">
         <label for="userInput">Ваш запрос:</label>
-        <input type="text" id="userInput" placeholder="Например: расскажи анекдот">
+        <input type="text" id="userInput" placeholder="Например: объясни квантовую физику простыми словами">
     </div>
     
     <button id="submitBtn" onclick="sendRequest()">Отправить запрос</button>
     
     <div class="loader" id="loader"></div>
-    <div id="response">Здесь появится ответ...</div>
+    <div id="response">Здесь появится ответ от модели...</div>
 
     <script>
-        let savedApiKey = '';
-        const MODEL = "meta-llama/Meta-Llama-3-8B-Instruct";
-
         function sendRequest() {
             const apiKey = document.getElementById('apiKey').value;
+            const model = document.getElementById('model').value;
             const input = document.getElementById('userInput').value;
             const responseDiv = document.getElementById('response');
             const loader = document.getElementById('loader');
             const btn = document.getElementById('submitBtn');
 
+            // Очищаем предыдущие сообщения
+            responseDiv.innerHTML = "";
+            responseDiv.className = "";
+
             if (!apiKey) {
                 responseDiv.textContent = "Введите API-ключ!";
+                responseDiv.className = "error";
                 return;
             }
 
             if (!input) {
                 responseDiv.textContent = "Введите запрос!";
+                responseDiv.className = "error";
                 return;
             }
 
-            // Блокируем кнопку на время запроса
+            // Блокируем кнопку и показываем загрузку
             btn.disabled = true;
-            responseDiv.textContent = "";
             loader.style.display = "block";
 
-            fetch(`https://api-inference.huggingface.co/models/${MODEL}`, {
+            fetch(`https://api-inference.huggingface.co/models/${model}`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${apiKey}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ inputs: input })
+                body: JSON.stringify({ 
+                    inputs: input,
+                    options: { wait_for_model: true } // Ждём загрузки модели
+                })
             })
-            .then(response => response.json())
+            .then(async response => {
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Ошибка HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
-                    responseDiv.textContent = `Ошибка: ${data.error}`;
-                } else {
-                    responseDiv.textContent = data[0]?.generated_text || "Ответ не распознан";
+                    throw new Error(data.error);
                 }
+                responseDiv.textContent = data[0]?.generated_text || JSON.stringify(data, null, 2);
             })
             .catch(error => {
                 responseDiv.textContent = `Ошибка: ${error.message}`;
+                responseDiv.className = "error";
+                console.error("API Error:", error);
             })
             .finally(() => {
                 loader.style.display = "none";
