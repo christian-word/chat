@@ -7,45 +7,37 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            line-height: 1.6;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            color: #333;
         }
-        h1 {
-            color: #2c3e50;
+        .input-group {
+            margin-bottom: 15px;
         }
-        #userInput {
-            width: 100%;
+        input, button {
             padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
         }
         button {
-            background-color: #3498db;
+            background-color: #4285f4;
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
         }
-        button:hover {
-            background-color: #2980b9;
+        button:disabled {
+            background-color: #cccccc;
         }
         #response {
             margin-top: 20px;
             padding: 15px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
             min-height: 100px;
         }
         .loader {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+            border-top: 4px solid #4285f4;
             border-radius: 50%;
             width: 30px;
             height: 30px;
@@ -61,58 +53,71 @@
 </head>
 <body>
     <h1>Тест Hugging Face API</h1>
-    <p>Введите запрос (например: "Расскажи анекдот про программистов"):</p>
     
-    <input type="text" id="userInput" placeholder="Ваш запрос...">
-    <button onclick="sendRequest()">Отправить</button>
+    <div class="input-group">
+        <label for="apiKey">Ваш API-ключ Hugging Face:</label>
+        <input type="password" id="apiKey" placeholder="Введите hf_...">
+    </div>
+    
+    <div class="input-group">
+        <label for="userInput">Ваш запрос:</label>
+        <input type="text" id="userInput" placeholder="Например: расскажи анекдот">
+    </div>
+    
+    <button id="submitBtn" onclick="sendRequest()">Отправить запрос</button>
     
     <div class="loader" id="loader"></div>
-    <div id="response">Здесь появится ответ от ИИ...</div>
+    <div id="response">Здесь появится ответ...</div>
 
     <script>
-        // Открытый API-ключ (только для теста!)
-        const API_KEY = "hf_your_demo_key_here"; // Замените на свой или оставьте для теста
+        let savedApiKey = '';
         const MODEL = "meta-llama/Meta-Llama-3-8B-Instruct";
 
-        async function sendRequest() {
+        function sendRequest() {
+            const apiKey = document.getElementById('apiKey').value;
             const input = document.getElementById('userInput').value;
             const responseDiv = document.getElementById('response');
             const loader = document.getElementById('loader');
+            const btn = document.getElementById('submitBtn');
+
+            if (!apiKey) {
+                responseDiv.textContent = "Введите API-ключ!";
+                return;
+            }
 
             if (!input) {
                 responseDiv.textContent = "Введите запрос!";
                 return;
             }
 
-            // Показываем загрузку
+            // Блокируем кнопку на время запроса
+            btn.disabled = true;
             responseDiv.textContent = "";
             loader.style.display = "block";
 
-            try {
-                const response = await fetch(
-                    `https://api-inference.huggingface.co/models/${MODEL}`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Authorization": `Bearer ${API_KEY}`,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ inputs: input })
-                    }
-                );
-
-                const data = await response.json();
-                
+            fetch(`https://api-inference.huggingface.co/models/${MODEL}`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ inputs: input })
+            })
+            .then(response => response.json())
+            .then(data => {
                 if (data.error) {
                     responseDiv.textContent = `Ошибка: ${data.error}`;
                 } else {
                     responseDiv.textContent = data[0]?.generated_text || "Ответ не распознан";
                 }
-            } catch (error) {
-                responseDiv.textContent = `Ошибка соединения: ${error.message}`;
-            } finally {
+            })
+            .catch(error => {
+                responseDiv.textContent = `Ошибка: ${error.message}`;
+            })
+            .finally(() => {
                 loader.style.display = "none";
-            }
+                btn.disabled = false;
+            });
         }
     </script>
 </body>
