@@ -1,271 +1,173 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Голос в текст с полным функционалом</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 100%;
-            padding: 15px;
-            margin: 0;
-            line-height: 1.5;
-        }
-        #status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            background: #f8f9fa;
-        }
-        .error {
-            background: #ffebee;
-            color: #d32f2f;
-        }
-        .success {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-        .btn {
-            width: 100%;
-            padding: 12px;
-            margin: 5px 0;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .btn-primary {
-            background: #4285f4;
-            color: white;
-        }
-        .btn-danger {
-            background: #ea4335;
-            color: white;
-        }
-        .btn-secondary {
-            background: #f1f3f4;
-            color: #202124;
-        }
-        button:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-family: inherit;
-            font-size: 16px;
-            resize: vertical;
-        }
-        .button-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .instructions {
-            font-size: 14px;
-            color: #666;
-            margin: 15px 0;
-        }
-        .icon {
-            margin-right: 8px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎤 Распознавание речи</title>
+  <style>
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --text: #333;
+      --primary: #0066cc;
+      --radius: 12px;
+    }
+
+    body.dark {
+      --bg: #1c1c1e;
+      --card: #2c2c2e;
+      --text: #f2f2f2;
+      --primary: #0a84ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    h2 {
+      font-size: 1.3em;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .theme-toggle {
+      font-size: 1em;
+      background: none;
+      border: none;
+      color: var(--primary);
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      padding: 12px;
+      font-size: 1em;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid #ccc;
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      resize: vertical;
+    }
+
+    button {
+      font-size: 1em;
+      padding: 10px 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 10px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #004999;
+    }
+
+    .status {
+      text-align: center;
+      font-size: 0.9em;
+      margin-top: 8px;
+      color: gray;
+    }
+  </style>
 </head>
 <body>
-    <h2>Голос в текст</h2>
-    <div id="status">Готов к работе</div>
-    
-    <div class="instructions">
-        <strong>Как использовать:</strong>
-        <ol>
-            <li>Нажмите "Начать запись"</li>
-            <li>Разрешите доступ к микрофону</li>
-            <li>Говорите четко в микрофон</li>
-        </ol>
-    </div>
-    
-    <textarea id="text" placeholder="Текст появится здесь..."></textarea>
-    
-    <button id="startBtn" class="btn btn-primary">
-        <span class="icon">🎤</span>Начать запись
-    </button>
-    <button id="stopBtn" class="btn btn-danger" disabled>
-        <span class="icon">⏹</span>Остановить
-    </button>
-    
-    <div class="button-group">
-        <button id="clearBtn" class="btn btn-secondary">
-            <span class="icon">❌</span>Очистить
-        </button>
-        <button id="copyBtn" class="btn btn-secondary">
-            <span class="icon">⎘</span>Копировать
-        </button>
-        <button id="saveBtn" class="btn btn-secondary">
-            <span class="icon">💾</span>Сохранить
-        </button>
-    </div>
+  <h2>
+    🎤 Распознавание речи
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+  </h2>
 
-    <script>
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const copyBtn = document.getElementById('copyBtn');
-        const saveBtn = document.getElementById('saveBtn');
-        const statusEl = document.getElementById('status');
-        const textArea = document.getElementById('text');
-        
-        let recognition;
-        let isRecording = false;
-        let lastTextLength = 0;
+  <textarea id="output" placeholder="Текст появится здесь..."></textarea>
+  <button onclick="startRecognition()">▶️ Начать запись</button>
+  <button onclick="stopRecognition()">⏹️ Остановить</button>
+  <div class="status" id="status">Готово к записи</div>
 
-        // Инициализация распознавания
-        function initRecognition() {
-            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'ru-RU';
-            
-            recognition.onstart = () => {
-                isRecording = true;
-                statusEl.textContent = 'Идет запись...';
-                statusEl.className = 'success';
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                lastTextLength = 0;
-            };
-            
-            recognition.onerror = (event) => {
-                let message = 'Ошибка: ';
-                if (event.error === 'not-allowed') {
-                    message += 'Доступ к микрофону запрещен. ';
-                    if (window.chrome) {
-                        message += 'В адресной строке нажмите на иконку 🔒 и разрешите микрофон.';
-                    } else {
-                        message += 'Обновите страницу и разрешите доступ.';
-                    }
-                } else {
-                    message += event.error;
-                }
-                showError(message);
-                stopRecording();
-            };
-            
-            recognition.onresult = (event) => {
-                let final = '';
-                let interim = '';
-                
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        final += transcript;
-                    } else {
-                        interim += transcript;
-                    }
-                }
-                
-                // Форматирование текста без "пирамид"
-                if (final) {
-                    textArea.value = textArea.value.substring(0, lastTextLength) + final + '\n';
-                    lastTextLength = textArea.value.length;
-                }
-                
-                if (interim) {
-                    textArea.value = textArea.value.substring(0, lastTextLength) + interim;
-                }
-                
-                textArea.scrollTop = textArea.scrollHeight;
-            };
-            
-            recognition.onend = () => {
-                if (isRecording) {
-                    recognition.start();
-                }
-            };
+  <script>
+    // Темная тема
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark');
+      }
+    });
+
+    // Speech-to-text
+    const output = document.getElementById("output");
+    const status = document.getElementById("status");
+
+    let recognition;
+    let isRecognizing = false;
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'ru-RU';
+      recognition.interimResults = true;
+      recognition.continuous = true;
+
+      recognition.onstart = () => {
+        isRecognizing = true;
+        status.textContent = "🎙️ Слушаю...";
+      };
+
+      recognition.onend = () => {
+        isRecognizing = false;
+        status.textContent = "⏹️ Остановлено";
+      };
+
+      recognition.onerror = (event) => {
+        status.textContent = "Ошибка: " + event.error;
+      };
+
+      recognition.onresult = (event) => {
+        let text = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          text += event.results[i][0].transcript;
         }
+        output.value = text;
+      };
+    } else {
+      alert("Ваш браузер не поддерживает распознавание речи.");
+    }
 
-        // Показать ошибку
-        function showError(message) {
-            statusEl.textContent = message;
-            statusEl.className = 'error';
-            console.error(message);
-        }
+    function startRecognition() {
+      if (recognition && !isRecognizing) {
+        recognition.start();
+      }
+    }
 
-        // Остановка записи
-        function stopRecording() {
-            isRecording = false;
-            if (recognition) {
-                recognition.stop();
-            }
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            statusEl.textContent = 'Готов к работе';
-            statusEl.className = '';
-        }
-
-        // Проверка поддержки API
-        function checkSupport() {
-            if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-                statusEl.textContent = 'Ваш браузер не поддерживает распознавание речи';
-                statusEl.className = 'error';
-                startBtn.disabled = true;
-                return false;
-            }
-            return true;
-        }
-
-        // Основная инициализация
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!checkSupport()) return;
-            
-            initRecognition();
-            
-            // Обработчики кнопок
-            startBtn.addEventListener('click', () => {
-                if (!isRecording) {
-                    textArea.value = '';
-                    try {
-                        recognition.start();
-                    } catch(e) {
-                        showError('Ошибка запуска: ' + e.message);
-                    }
-                }
-            });
-            
-            stopBtn.addEventListener('click', stopRecording);
-            
-            clearBtn.addEventListener('click', () => {
-                textArea.value = '';
-                lastTextLength = 0;
-            });
-            
-            copyBtn.addEventListener('click', () => {
-                textArea.select();
-                document.execCommand('copy');
-                statusEl.textContent = 'Текст скопирован в буфер';
-                statusEl.className = 'success';
-                setTimeout(() => {
-                    statusEl.textContent = 'Готов к работе';
-                    statusEl.className = '';
-                }, 2000);
-            });
-            
-            saveBtn.addEventListener('click', () => {
-                const blob = new Blob([textArea.value], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'текст_' + new Date().toISOString().slice(0, 10) + '.txt';
-                a.click();
-                URL.revokeObjectURL(url);
-            });
-        });
-    </script>
+    function stopRecognition() {
+      if (recognition && isRecognizing) {
+        recognition.stop();
+      }
+    }
+  </script>
 </body>
 </html>
