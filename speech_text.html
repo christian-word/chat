@@ -194,16 +194,18 @@
       });
     }
 
-    function saveText() {
-      const blob = new Blob([output.value], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "speech-to-text.txt";
-      a.click();
-      URL.revokeObjectURL(url);
-      status.textContent = "💾 Сохранено как .txt";
-    }
+function saveText() {
+  const bom = '\uFEFF'; // UTF-8 BOM
+  const blob = new Blob([bom + output.value], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "speech-to-text.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+  status.textContent = "💾 Сохранено как .txt (UTF-8)";
+}
+
   </script>
 </body>
 </html>
