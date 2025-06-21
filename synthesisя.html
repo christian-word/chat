@@ -1,0 +1,490 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Озвучка Библии. Озвучка текста</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Стили остаются без изменений */
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --primary: #4a6fa5;
+      --secondary: #6c8fc7;
+      --text: #2d3748;
+      --text-light: #718096;
+      --radius: 12px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+      background: var(--bg);
+      padding: 20px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    h1 {
+      color: var(--primary);
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-light);
+      font-size: 1rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .control-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    select, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+
+    select {
+      background-color: #fff;
+      cursor: pointer;
+    }
+
+    select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .slider-container {
+      margin-top: 15px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      -webkit-appearance: none;
+      background: #e2e8f0;
+      border-radius: 3px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--primary);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: var(--secondary);
+      transform: scale(1.1);
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px;
+      width: 100%;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn:hover {
+      background: var(--secondary);
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn svg {
+      margin-right: 8px;
+    }
+
+    .verse-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .verse-btn {
+      background: #edf2f7;
+      color: var(--primary);
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .verse-btn:hover {
+      background: #e2e8f0;
+      transform: translateY(-1px);
+    }
+
+    .verse-btn:active {
+      transform: translateY(0);
+    }
+
+    .log-container {
+      margin-top: 25px;
+    }
+
+    .log-title {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+    }
+
+    .log-title svg {
+      margin-right: 8px;
+    }
+
+    .log-entry {
+      background: white;
+      padding: 14px;
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+      position: relative;
+      padding-left: 40px;
+    }
+
+    .log-entry:before {
+      content: "»";
+      position: absolute;
+      left: 15px;
+      top: 14px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .timestamp {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      margin-top: 5px;
+      display: block;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 15px;
+      }
+      
+      .card {
+        padding: 18px;
+      }
+      
+      .verse-buttons {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Озвучка любого текста, переводчик</h1>
+      <p class="subtitle">Для примера, синтезатор адаптирова под Священное Писание</p>
+    </header>
+
+    <div class="card">
+      <div class="control-group">
+        <label for="voice">Выберите голос</label>
+        <select id="voice"></select>
+      </div>
+
+      <div class="control-group">
+        <label>Настройки голоса</label>
+        <div class="slider-container">
+          <div class="slider-label">
+            <span>Скорость: <span id="rate-val">1.0</span></span>
+          </div>
+          <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+        </div>
+
+        <div class="slider-container">
+          <div class="slider-label">
+            <span>Высота тона: <span id="pitch-val">1.0</span></span>
+          </div>
+          <input type="range" id="pitch" min="0.5" max="1.5" step="0.1" value="1">
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="text">Текст для озвучки</label>
+        <textarea id="text" placeholder="Введите текст библейского стиха...">Ибо так возлюбил Бог мир, что отдал Сына Своего Единородного, дабы всякий верующий в Него, не погиб, но имел жизнь вечную. (Иоанна 3:16)</textarea>
+      </div>
+
+      <div class="verse-buttons">
+        <button class="verse-btn" onclick="setVerse('Исаия 40:8', 'Трава засыхает, цвет увядает, а слово Бога нашего пребудет вечно.')">Исаия 40:8</button>
+        <button class="verse-btn" onclick="setVerse('1 Фес. 5:21-22', 'Все испытывайте, хорошего держитесь. Удерживайтесь от всякого рода зла.')">1 Фес. 5:21-22</button>
+        <button class="verse-btn" onclick="setVerse('Рим. 12:17-21', 'Не воздавайте злом за зло... Побеждай зло добром.')">Рим. 12:17-21</button>
+        <button class="verse-btn" onclick="setVerse('Притчи 20:22', 'Не говори: "Я отплачу за обиду!" Положись на Господа — Он спасет тебя.')">Притчи 20:22</button>
+      </div>
+
+      <button class="btn" onclick="speak()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        Произнести текст
+      </button>
+    </div>
+
+    <div class="log-container">
+      <div class="log-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="21 8 21 21 3 21 3 8"></polyline>
+          <rect x="1" y="3" width="22" height="5"></rect>
+          <line x1="10" y1="12" x2="14" y2="12"></line>
+        </svg>
+        История озвучки
+      </div>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    const voiceSelect = document.getElementById('voice');
+    const rateInput = document.getElementById('rate');
+    const pitchInput = document.getElementById('pitch');
+    const rateVal = document.getElementById('rate-val');
+    const pitchVal = document.getElementById('pitch-val');
+    const log = document.getElementById('log');
+    const textArea = document.getElementById('text');
+
+    // Функция для установки стиха
+    function setVerse(title, text) {
+      textArea.value = `${text} (${title})`;
+      textArea.focus();
+    }
+
+    // Обновление значений ползунков
+    rateInput.oninput = () => rateVal.textContent = rateInput.value;
+    pitchInput.oninput = () => pitchVal.textContent = pitchInput.value;
+
+    // Функция для корректировки библейских ссылок
+// Обновленная функция для корректировки библейских ссылок
+function fixBibleReferences(text) {
+  const books = [
+    'Бытие','Исход','Левит','Числа','Второзаконие',
+    'Иисус Навин','Судьи','Руфь','1 Царств','2 Царств',
+    '3 Царств','4 Царств','1 Паралипоменон','2 Паралипоменон',
+    'Ездры','Неемии','Есфирь','Иова','Псалтирь','Притчи',
+    'Екклесиаста','Песни Песней','Исаии','Иеремии','Плач Иеремии',
+    'Иезекииля','Даниила','Осии','Иоиля','Амоса','Авдия',
+    'Ионы','Михея','Наума','Аввакума','Софонии','Аггея',
+    'Захарии','Малахии','Матфея','Марка','Луки','Иоанна',
+    'Деяния','Римлянам','1 Коринфянам','2 Коринфянам',
+    'Галатам','Ефесянам','Филиппийцам','Колоссянам',
+    '1 Фессалоникийцам','2 Фессалоникийцам','1 Тимофею',
+    '2 Тимофею','Титу','Филимону','Евреям','Иакова',
+    '1 Петра','2 Петра','1 Иоанна','2 Иоанна','3 Иоанна',
+    'Иуды','Откровение'
+  ];
+
+  // Улучшенное регулярное выражение
+  const regex = new RegExp(`(\\b${books.join('\\b|\\b')}\\b)\\s*(\\d+)[:\\s]*(\\d+)`, 'gi');
+  
+  return text.replace(regex, (match, book, chapter, verse) => {
+    // Преобразуем цифры в слова с правильным склонением
+    const chapterText = numberToWords(parseInt(chapter), 'feminine'); // "глава" — женский род
+    const verseText = numberToWords(parseInt(verse), 'masculine');   // "стих" — мужской род
+    
+    return `${book} ${chapterText} глава ${verseText} стих`;
+  });
+}
+
+// Усовершенствованная функция преобразования чисел в слова
+function numberToWords(num, gender) {
+  const units = {
+    masculine: ['', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'],
+    feminine: ['', 'одна', 'две', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять']
+  };
+  
+  const teens = ['десять', 'одиннадцать', 'двенадцать', 'тринадцать', 'четырнадцать', 
+                'пятнадцать', 'шестнадцать', 'семнадцать', 'восемнадцать', 'девятнадцать'];
+  
+  const tens = ['', '', 'двадцать', 'тридцать', 'сорок', 'пятьдесят', 
+               'шестьдесят', 'семьдесят', 'восемьдесят', 'девяносто'];
+  
+  if (num === 0) return 'ноль';
+  if (num < 10) return units[gender][num];
+  if (num < 20) return teens[num - 10];
+  
+  const ten = Math.floor(num / 10);
+  const unit = num % 10;
+  
+  return tens[ten] + (unit ? ' ' + units[gender][unit] : '');
+}
+
+    // Функция для воспроизведения текста
+function speak() {
+  let text = textArea.value.trim();
+  if (!text) return;
+
+  // Сначала заменяем все библейские ссылки
+  text = fixBibleReferences(text);
+  
+  // Затем принудительно заменяем оставшиеся цифровые форматы
+ text = text.replace(/(\d+)[:.](\d+)/g, '$1... $2'); // Добавляем паузу
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+      const voices = speechSynthesis.getVoices();
+      const selectedVoice = voices[voiceSelect.value];
+      
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = 'ru-RU';
+      }
+
+      utterance.rate = parseFloat(rateInput.value);
+      utterance.pitch = parseFloat(pitchInput.value);
+
+      speechSynthesis.speak(utterance);
+      addToLog(textArea.value.trim());
+    }
+
+    // Добавление в лог
+    function addToLog(text) {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.innerHTML = `${text} <span class="timestamp">${timeString}</span>`;
+      
+      log.insertBefore(div, log.firstChild);
+      
+      if (log.children.length > 5) {
+        log.removeChild(log.lastChild);
+      }
+    }
+
+    // Функция для заполнения списка голосов
+    function populateVoices() {
+      const voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = '';
+      
+      let defaultVoiceIndex = 0;
+      
+      voices.forEach((voice, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+        
+        // Устанавливаем Google Russian как голос по умолчанию
+        if (voice.name.includes('Google') && (voice.lang.includes('ru-RU') || voice.lang.includes('ru'))) {
+          defaultVoiceIndex = i;
+        }
+      });
+      
+      // Если Google не найден, выбираем первый русский голос
+      if (defaultVoiceIndex === 0) {
+        voices.forEach((voice, i) => {
+          if (voice.lang.includes('ru-RU') || voice.lang.includes('ru')) {
+            defaultVoiceIndex = i;
+          }
+        });
+      }
+      
+      voiceSelect.value = defaultVoiceIndex;
+    }
+
+    // Инициализация голосов
+    function initVoices() {
+      // Первая попытка получить голоса
+      populateVoices();
+      
+      // На случай, если голоса еще не загружены
+      if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.onvoiceschanged = populateVoices;
+        
+        // Дополнительная проверка через секунду
+        setTimeout(() => {
+          if (speechSynthesis.getVoices().length > 0 && voiceSelect.options.length === 0) {
+            populateVoices();
+          }
+        }, 1000);
+      }
+    }
+
+    // Запускаем при загрузке страницы
+    window.addEventListener('load', initVoices);
+    
+    // Дополнительная инициализация для некоторых браузеров
+    setTimeout(initVoices, 500);
+  </script>
+</body>
+</html>
