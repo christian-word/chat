@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Озвучка текста — Чат</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --primary: #0066cc;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      padding: 16px;
+      color: #333;
+    }
+
+    h2 {
+      margin-bottom: 12px;
+      font-size: 1.4em;
+      text-align: center;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 10px;
+      display: block;
+    }
+
+    textarea {
+      width: 100%;
+      height: 80px;
+      margin-top: 6px;
+      padding: 10px;
+      border-radius: var(--radius);
+      border: 1px solid #ccc;
+      resize: none;
+      font-size: 1em;
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px;
+      width: 100%;
+      font-size: 1em;
+      margin-top: 14px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #004a99;
+    }
+
+    #log {
+      margin-top: 10px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .entry {
+      background: #fff;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .small {
+      font-size: 0.85em;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9em;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🎙️ Озвучка текста</h2>
+
+  <div class="card">
+    <label for="voice">Голос</label>
+    <select id="voice"></select>
+
+    <div class="slider-label">
+      <span>Скорость</span><span id="rate-val">1.0</span>
+    </div>
+    <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+
+    <div class="slider-label">
+      <span>Тон</span><span id="pitch-val">1.0</span>
+    </div>
+    <input type="range" id="pitch" min="0" max="2" step="0.1" value="1">
+
+    <label for="text">Текст</label>
+    <textarea id="text" placeholder="Напиши, что произнести...">Привет! Как у тебя дела?</textarea>
+
+    <button onclick="speak()">🔊 Произнести</button>
+  </div>
+
+  <div id="log" class="card"></div>
+
+  <script>
+    const voiceSelect = document.getElementById('voice');
+    const rateInput = document.getElementById('rate');
+    const pitchInput = document.getElementById('pitch');
+    const rateVal = document.getElementById('rate-val');
+    const pitchVal = document.getElementById('pitch-val');
+    const log = document.getElementById('log');
+
+    function populateVoices() {
+      const voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = '';
+      voices.forEach((voice, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${voice.name} (${voice.lang})${voice.default ? ' [по умолчанию]' : ''}`;
+        voiceSelect.appendChild(option);
+      });
+    }
+
+    rateInput.oninput = () => rateVal.textContent = rateInput.value;
+    pitchInput.oninput = () => pitchVal.textContent = pitchInput.value;
+
+    function speak() {
+      const text = document.getElementById('text').value.trim();
+      if (!text) return;
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voices = speechSynthesis.getVoices();
+      const selectedVoice = voices[voiceSelect.value];
+      if (selectedVoice) utterance.voice = selectedVoice;
+
+      utterance.rate = parseFloat(rateInput.value);
+      utterance.pitch = parseFloat(pitchInput.value);
+
+      speechSynthesis.speak(utterance);
+      addToLog(text);
+    }
+
+    function addToLog(text) {
+      const div = document.createElement('div');
+      div.className = 'entry';
+      div.innerHTML = `${text}`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Инициализация
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = populateVoices;
+    } else {
+      populateVoices();
+    }
+  </script>
+</body>
+</html>
