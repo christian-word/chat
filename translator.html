@@ -1,94 +1,126 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Голосовой Переводчик RU ↔ EN</title>
+  <meta charset="UTF-8">
+  <title>Голосовой озвучиватель</title>
   <style>
     body {
       font-family: sans-serif;
-      background: #111;
-      color: #eee;
-      margin: 0;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      padding: 1em;
+      background: #f5f5f5;
     }
-    button, select {
-      font-size: 1.2rem;
-      padding: 0.5rem 1rem;
-      margin: 0.5rem;
-      border: none;
-      border-radius: 8px;
-      background: #333;
-      color: #fff;
-      cursor: pointer;
+    textarea {
+      width: 100%;
+      height: 100px;
+      font-size: 1em;
+      padding: 0.5em;
+      margin-bottom: 0.5em;
     }
-    button:hover {
-      background: #555;
+    select, input[type=range], button {
+      width: 100%;
+      margin: 0.3em 0;
+      padding: 0.5em;
+      font-size: 1em;
     }
-    #output {
-      margin-top: 1rem;
-      font-size: 1.4rem;
-      text-align: center;
-      max-width: 90%;
+    #log {
+      max-height: 150px;
+      overflow-y: auto;
+      background: #fff;
+      padding: 0.5em;
+      margin-top: 1em;
+      border: 1px solid #ccc;
+    }
+    .entry {
+      padding: 0.2em 0;
+      border-bottom: 1px solid #eee;
     }
   </style>
 </head>
 <body>
-  <h1>🎤 Голосовой Переводчик</h1>
-  <button id="toggle-direction">RU → EN</button>
-  <button id="start">🎙️ Говорить</button>
-  <div id="output"></div>
+  <h2>🎙️ Распознавание и Озвучка</h2>
+
+  <textarea id="text" placeholder="Нажмите 'Говорить', чтобы начать..."></textarea>
+
+  <button onclick="startRecognition()">🎤 Говорить</button>
+  <button onclick="speak()">🔊 Озвучить</button>
+
+  <label for="voice">Голос:</label>
+  <select id="voice"></select>
+
+  <label>Скорость: <span id="rate-val">1</span></label>
+  <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+
+  <label>Тон: <span id="pitch-val">1</span></label>
+  <input type="range" id="pitch" min="0" max="2" step="0.1" value="1">
+
+  <div id="log"></div>
 
   <script>
-    let isRuToEn = true;
-    const toggleBtn = document.getElementById('toggle-direction');
-    const startBtn = document.getElementById('start');
-    const output = document.getElementById('output');
+    const voiceSelect = document.getElementById('voice');
+    const rateInput = document.getElementById('rate');
+    const pitchInput = document.getElementById('pitch');
+    const rateVal = document.getElementById('rate-val');
+    const pitchVal = document.getElementById('pitch-val');
+    const log = document.getElementById('log');
+    const textArea = document.getElementById('text');
 
-    toggleBtn.addEventListener('click', () => {
-      isRuToEn = !isRuToEn;
-      toggleBtn.textContent = isRuToEn ? 'RU → EN' : 'EN → RU';
-    });
-
-    startBtn.addEventListener('click', () => {
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = isRuToEn ? 'ru-RU' : 'en-US';
-      recognition.start();
-
-      recognition.onresult = async (event) => {
-        const text = event.results[0][0].transcript;
-        output.innerHTML = `<em>Вы сказали:</em> ${text}`;
-
-        const translated = await translateText(text, isRuToEn ? 'ru' : 'en', isRuToEn ? 'en' : 'ru');
-        output.innerHTML += `<br><strong>Перевод:</strong> ${translated}`;
-
-        // ✅ озвучка именно перевода
-        speak(translated, isRuToEn ? 'en' : 'ru');
-      };
-    });
-
-async function translateText(text, source, target) {
-  try {
-    const res = await fetch('https://translate.argosopentech.com/translate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: text, source, target, format: 'text' })
-    });
-    const data = await res.json();
-    return data.translatedText;
-  } catch (e) {
-    return '[Ошибка перевода]';
-  }
-}
-
-    function speak(text, langCode) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = langCode === 'ru' ? 'ru-RU' : 'en-US';
-      speechSynthesis.speak(utterance);
+    function populateVoices() {
+      const voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = '';
+      voices.forEach((voice, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${voice.name} (${voice.lang})${voice.default ? ' [по умолчанию]' : ''}`;
+        voiceSelect.appendChild(option);
+      });
     }
+
+    function speak() {
+      const text = textArea.value.trim();
+      if (!text) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voices = speechSynthesis.getVoices();
+      const selectedVoice = voices[voiceSelect.value];
+      if (selectedVoice) utterance.voice = selectedVoice;
+      utterance.rate = parseFloat(rateInput.value);
+      utterance.pitch = parseFloat(pitchInput.value);
+      speechSynthesis.speak(utterance);
+      addToLog(text);
+    }
+
+    function addToLog(text) {
+      const div = document.createElement('div');
+      div.className = 'entry';
+      div.textContent = text;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function startRecognition() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'ru-RU'; // можно поставить 'en-US' по умолчанию
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (event) => {
+        const result = event.results[0][0].transcript;
+        textArea.value = result;
+        addToLog("🎧 " + result);
+      };
+
+      recognition.onerror = (event) => {
+        alert('Ошибка распознавания: ' + event.error);
+      };
+
+      recognition.start();
+    }
+
+    speechSynthesis.onvoiceschanged = populateVoices;
+    populateVoices();
+
+    rateInput.oninput = () => rateVal.textContent = rateInput.value;
+    pitchInput.oninput = () => pitchVal.textContent = pitchInput.value;
   </script>
 </body>
 </html>
