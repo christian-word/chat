@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Голосовой Переводчик RU ↔ EN</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #eee;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    button, select {
+      font-size: 1.2rem;
+      padding: 0.5rem 1rem;
+      margin: 0.5rem;
+      border: none;
+      border-radius: 8px;
+      background: #333;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #555;
+    }
+    #output {
+      margin-top: 1rem;
+      font-size: 1.4rem;
+      text-align: center;
+      max-width: 90%;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎤 Голосовой Переводчик</h1>
+  <button id="toggle-direction">RU → EN</button>
+  <button id="start">🎙️ Говорить</button>
+  <div id="output"></div>
+
+  <script>
+    let isRuToEn = true;
+    const toggleBtn = document.getElementById('toggle-direction');
+    const startBtn = document.getElementById('start');
+    const output = document.getElementById('output');
+
+    toggleBtn.addEventListener('click', () => {
+      isRuToEn = !isRuToEn;
+      toggleBtn.textContent = isRuToEn ? 'RU → EN' : 'EN → RU';
+    });
+
+    startBtn.addEventListener('click', () => {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = isRuToEn ? 'ru-RU' : 'en-US';
+      recognition.start();
+
+      recognition.onresult = async (event) => {
+        const text = event.results[0][0].transcript;
+        output.innerHTML = `<em>Вы сказали:</em> ${text}`;
+
+        const translated = await translateText(text, isRuToEn ? 'ru' : 'en', isRuToEn ? 'en' : 'ru');
+        output.innerHTML += `<br><strong>Перевод:</strong> ${translated}`;
+
+        speak(translated, isRuToEn ? 'en' : 'ru');
+      };
+    });
+
+    async function translateText(text, source, target) {
+      try {
+        const res = await fetch('https://libretranslate.com/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ q: text, source, target, format: 'text' })
+        });
+        const data = await res.json();
+        return data.translatedText;
+      } catch (e) {
+        return '[Ошибка перевода]';
+      }
+    }
+
+    function speak(text, langCode) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = langCode === 'ru' ? 'ru-RU' : 'en-US';
+      speechSynthesis.speak(utterance);
+    }
+  </script>
+</body>
+</html>
