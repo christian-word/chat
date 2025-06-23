@@ -1,1 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Простой плеер с кнопкой запуска</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #start { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>🎵 Онлайн-плеер</h1>
+  <button id="start">▶️ Начать проигрывание</button>
+  <br><br>
+  <audio id="player" controls></audio>
+  <p id="nowPlaying"></p>
+
+  <script>
+    // Пример плейлиста: массив прямых ссылок на mp3
+    const playlist = [
+      "https://docs.google.com/uc?export=download&id=1Mg352dTwbd_nIWLuWs786ptu888CFz7t", // замените на рабочие прямые mp3
+      "https://example.com/audio2.mp3" // ещё один пример
+    ];
+
+    let current = 0;
+    const audio = document.getElementById("player");
+    const info = document.getElementById("nowPlaying");
+
+    function playTrack(index) {
+      if (index >= playlist.length) return;
+
+      const url = playlist[index];
+      audio.src = url;
+      audio.play()
+        .then(() => {
+          info.textContent = `Сейчас играет: ${url}`;
+        })
+        .catch(err => {
+          console.error("Ошибка воспроизведения:", err);
+          info.textContent = "Не удалось воспроизвести трек.";
+        });
+    }
+
+    audio.addEventListener("ended", () => {
+      current++;
+      if (current < playlist.length) {
+        playTrack(current);
+      } else {
+        info.textContent = "Плейлист завершён.";
+      }
+    });
+
+    document.getElementById("start").addEventListener("click", () => {
+      document.getElementById("start").style.display = "none";
+      playTrack(current);
+    });
+  </script>
+</body>
+</html>
 
