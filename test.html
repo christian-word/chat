@@ -1,61 +1,86 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Простой плеер с кнопкой запуска</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    #start { padding: 10px 20px; font-size: 16px; cursor: pointer; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аудио плеер</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .player {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        audio {
+            width: 100%;
+            margin: 15px 0;
+        }
+        .controls {
+            margin-top: 15px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+    </style>
 </head>
 <body>
+    <div class="player">
+        <h2>Аудио плеер</h2>
+        <input type="text" id="audioUrl" placeholder="Введите URL аудиофайла" value="https://example.com/audio.mp3">
+        <button onclick="loadAudio()">Загрузить</button>
+        
+        <audio id="audioPlayer" controls>
+            Ваш браузер не поддерживает аудио элемент.
+        </audio>
+        
+        <div class="controls">
+            <button onclick="document.getElementById('audioPlayer').play()">▶️ Воспроизвести</button>
+            <button onclick="document.getElementById('audioPlayer').pause()">⏸ Пауза</button>
+            <button onclick="document.getElementById('audioPlayer').volume += 0.1">🔊 Громче</button>
+            <button onclick="document.getElementById('audioPlayer').volume -= 0.1">🔉 Тише</button>
+        </div>
+    </div>
 
-  <h1>🎵 Онлайн-плеер</h1>
-  <button id="start">▶️ Начать проигрывание</button>
-  <br><br>
-  <audio id="player" controls></audio>
-  <p id="nowPlaying"></p>
-
-  <script>
-    // Пример плейлиста: массив прямых ссылок на mp3
-    const playlist = [
-      "https://docs.google.com/uc?export=download&id=1Mg352dTwbd_nIWLuWs786ptu888CFz7t", // замените на рабочие прямые mp3
-      "https://example.com/audio2.mp3" // ещё один пример
-    ];
-
-    let current = 0;
-    const audio = document.getElementById("player");
-    const info = document.getElementById("nowPlaying");
-
-    function playTrack(index) {
-      if (index >= playlist.length) return;
-
-      const url = playlist[index];
-      audio.src = url;
-      audio.play()
-        .then(() => {
-          info.textContent = `Сейчас играет: ${url}`;
-        })
-        .catch(err => {
-          console.error("Ошибка воспроизведения:", err);
-          info.textContent = "Не удалось воспроизвести трек.";
-        });
-    }
-
-    audio.addEventListener("ended", () => {
-      current++;
-      if (current < playlist.length) {
-        playTrack(current);
-      } else {
-        info.textContent = "Плейлист завершён.";
-      }
-    });
-
-    document.getElementById("start").addEventListener("click", () => {
-      document.getElementById("start").style.display = "none";
-      playTrack(current);
-    });
-  </script>
+    <script>
+        function loadAudio() {
+            const url = document.getElementById('audioUrl').value;
+            if (url) {
+                document.getElementById('audioPlayer').src = url;
+                document.getElementById('audioPlayer').load();
+            } else {
+                alert('Пожалуйста, введите URL аудиофайла');
+            }
+        }
+        
+        // Автозагрузка при открытии, если URL уже введен
+        window.onload = function() {
+            const urlInput = document.getElementById('audioUrl');
+            if (urlInput.value && urlInput.value !== 'https://example.com/audio.mp3') {
+                loadAudio();
+            }
+        };
+    </script>
 </body>
 </html>
-
