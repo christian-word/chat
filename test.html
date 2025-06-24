@@ -1,20 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Google Drive MP3 Player</title>
+  <title>🎵 Google Drive MP3 Player (с буферизацией)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f7f7f7;
+      padding: 20px;
+      text-align: center;
+    }
+    h2 {
+      color: #444;
+    }
+    #player {
+      width: 80%;
+      margin-top: 10px;
+    }
+    .controls {
+      margin-top: 15px;
+    }
+    .controls button {
+      padding: 8px 15px;
+      margin: 0 5px;
+      font-size: 14px;
+    }
+    #trackName {
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    #timeDisplay {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #555;
+    }
+    #loading {
+      display: none;
+      margin-top: 10px;
+      font-style: italic;
+      color: #999;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+    li {
+      cursor: pointer;
+      padding: 5px;
+      border-bottom: 1px solid #ddd;
+    }
+    li:hover {
+      background: #e6e6e6;
+    }
+  </style>
 </head>
 <body>
-  <h2>🎵 Плеер с Google Drive</h2>
+  <h2>🎧 Google Drive MP3 Player</h2>
+  <div id="trackName">Загрузка треков...</div>
   <audio id="player" controls></audio>
+  <div id="loading">⏳ Загрузка ...</div>
+  <div id="timeDisplay"></div>
+  <div class="controls">
+    <button onclick="prevTrack()">⏮️ Назад</button>
+    <button onclick="replayTrack()">🔁 Повтор</button>
+    <button onclick="nextTrack()">⏭️ Вперёд</button>
+  </div>
   <ul id="trackList"></ul>
 
   <script>
     const API_KEY = "AIzaSyAlxAoAyke0AAkiI3akNyWLNVwtoycjkgA";
     const FOLDER_ID = "1GbUXLKzugx_W5qDttjtFxWC4pOT9kQna";
+
     const player = document.getElementById("player");
+    const loading = document.getElementById("loading");
     const trackList = document.getElementById("trackList");
-    let tracks = [], current = 0;
+    const trackName = document.getElementById("trackName");
+    const timeDisplay = document.getElementById("timeDisplay");
+
+    let tracks = [], current = 0, currentBlobURL = null;
 
     async function fetchDriveFiles() {
       const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+mimeType='audio/mpeg'&key=${API_KEY}&fields=files(id,name)`;
@@ -22,8 +87,7 @@
       const data = await res.json();
       tracks = data.files.map(file => ({
         id: file.id,
-        name: file.name,
-        url: `https://drive.google.com/uc?export=download&id=${file.id}`
+        name: file.name
       }));
       buildList();
       playTrack(0);
@@ -39,16 +103,79 @@
       });
     }
 
-    function playTrack(index) {
+    async function playTrack(index) {
       current = index;
-      player.src = tracks[index].url;
-      player.play();
+      const file = tracks[index];
+
+      // Остановить и сбросить текущий трек
+      player.pause();
+      player.src = "";
+      timeDisplay.textContent = "";
+      loading.style.display = "block";
+
+      if (currentBlobURL) {
+        URL.revokeObjectURL(currentBlobURL);
+        currentBlobURL = null;
+      }
+
+      try {
+        trackName.textContent = `🔊 ${file.name}`;
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${API_KEY}`);
+        if (!response.ok) {
+          throw new Error("Ошибка загрузки: " + response.status);
+        }
+        const blob = await response.blob();
+        currentBlobURL = URL.createObjectURL(blob);
+        player.src = currentBlobURL;
+        player.play().then(() => {
+          loading.style.display = "none";
+        }).catch(err => {
+          console.error("Ошибка при воспроизведении:", err);
+          loading.style.display = "none";
+        });
+      } catch (err) {
+        console.error("Ошибка воспроизведения:", err.message);
+        trackName.textContent = "⚠️ Ошибка загрузки";
+        loading.style.display = "none";
+      }
     }
 
-    player.addEventListener("ended", () => {
+    function nextTrack() {
       current = (current + 1) % tracks.length;
       playTrack(current);
+    }
+
+    function prevTrack() {
+      current = (current - 1 + tracks.length) % tracks.length;
+      playTrack(current);
+    }
+
+    function replayTrack() {
+      playTrack(current);
+    }
+
+    player.addEventListener("ended", nextTrack);
+
+    player.addEventListener("timeupdate", () => {
+      const currentTime = formatTime(player.currentTime);
+      const duration = formatTime(player.duration);
+      timeDisplay.textContent = `${currentTime} / ${duration}`;
     });
+
+    player.addEventListener("pause", () => {
+      loading.style.display = "none";
+    });
+
+    player.addEventListener("playing", () => {
+      loading.style.display = "none";
+    });
+
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return "0:00";
+      const min = Math.floor(seconds / 60);
+      const sec = Math.floor(seconds % 60).toString().padStart(2, "0");
+      return `${min}:${sec}`;
+    }
 
     fetchDriveFiles();
   </script>
