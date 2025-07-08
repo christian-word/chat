@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blob Видео Плеер</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #121212;
+      color: #fff;
+    }
+    .player {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #1e1e1e;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    .track-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .track-list li {
+      padding: 14px 16px;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+    }
+    .track-list li:hover {
+      background: #2a2a2a;
+    }
+    .track-list li.active {
+      background: #333;
+      font-weight: bold;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #222;
+    }
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #ccc;
+      font-size: 16px;
+    }
+    button:hover {
+      color: #00bcd4;
+    }
+    #videoModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    #videoModal video {
+      width: 90%;
+      max-height: 90vh;
+      border: 2px solid #555;
+    }
+    #closeModal {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      color: #fff;
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    #closeModal:hover {
+      color: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <div class="player">
+    <div class="controls">
+      <button onclick="prevTrack()">⏮️ Назад</button>
+      <button onclick="nextTrack()">Вперёд ⏭️</button>
+    </div>
+    <ul class="track-list" id="playlist"></ul>
+  </div>
+
+  <!-- Всплывающее полноэкранное окно -->
+  <div id="videoModal">
+    <button id="closeModal" onclick="closeModal()">✖</button>
+    <video id="videoPlayer" controls autoplay></video>
+  </div>
+
+  <script>
+    const tracks = [
+      { title: "Видео с Drive 1", url: "https://drive.google.com/uc?export=download&id=1FKbRMwV3o1SExhU2d4tuFkbWEcP2Irax" },
+      { title: "Видео с Drive 2", url: "https://drive.google.com/uc?export=download&id=1FKbRMwV3o1SExhU2d4tuFkbWEcP2Irax" },
+      { title: "Видео с Drive 3", url: "https://drive.google.com/uc?export=download&id=ФАЙЛ_ID_3" }
+    ];
+
+    const playlist = document.getElementById('playlist');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoModal = document.getElementById('videoModal');
+    let currentTrack = 0;
+
+    function updateActiveTrack(index) {
+      [...playlist.children].forEach((li, i) => {
+        li.classList.toggle('active', i === index);
+      });
+    }
+
+    function loadTrack(index) {
+      const track = tracks[index];
+      fetch(track.url)
+        .then(res => res.blob())
+        .then(blob => {
+          const videoURL = URL.createObjectURL(blob);
+          videoPlayer.src = videoURL;
+          openModal();
+          updateActiveTrack(index);
+        })
+        .catch(err => {
+          alert("Ошибка загрузки видео");
+          console.error(err);
+        });
+    }
+
+    function nextTrack() {
+      currentTrack = (currentTrack + 1) % tracks.length;
+      loadTrack(currentTrack);
+    }
+
+    function prevTrack() {
+      currentTrack = (currentTrack - 1 + tracks.length) % tracks.length;
+      loadTrack(currentTrack);
+    }
+
+    function openModal() {
+      videoModal.style.display = "flex";
+      videoPlayer.play();
+    }
+
+    function closeModal() {
+      videoModal.style.display = "none";
+      videoPlayer.pause();
+      videoPlayer.src = "";
+    }
+
+    // Автопереход к следующему видео
+    videoPlayer.addEventListener('ended', () => {
+      nextTrack();
+    });
+
+    // Заполнение плейлиста
+    tracks.forEach((track, index) => {
+      const li = document.createElement('li');
+      li.textContent = track.title;
+      li.addEventListener('click', () => {
+        currentTrack = index;
+        loadTrack(currentTrack);
+      });
+      playlist.appendChild(li);
+    });
+  </script>
+</body>
+</html>
