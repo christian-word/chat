@@ -1,96 +1,97 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <title>Тест Llama 3.1 через HuggingFace API</title>
+  <title>Редактор масиву JSON</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 2em;
-      background: #f9f9f9;
-    }
-    textarea, input, button {
-      font-size: 1rem;
-      width: 100%;
-      margin-bottom: 1em;
-    }
-    pre {
-      background: #eee;
-      padding: 1em;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+    body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #eee; }
+    input { width: 100%; padding: 8px; margin-top: 4px; margin-bottom: 12px; }
+    button { padding: 8px 14px; margin-right: 10px; }
+    #editor { background: #fff; padding: 16px; border: 1px solid #ccc; }
   </style>
 </head>
 <body>
+  <h2>Редактор JSON (масив об'єктів)</h2>
+  <div id="table-container">Завантаження...</div>
 
-  <h1>💬 Llama 3.1 через HuggingFace Inference API</h1>
+  <div id="editor" style="display:none">
+    <h3>Редагування</h3>
+    <label>ПІБ: <input type="text" id="fullname"></label><br>
+    <label>Дата народження: <input type="date" id="birthdate"></label><br>
+    <label>Телефон: <input type="text" id="phone"></label><br>
+    <button onclick="applyChanges()">Зберегти зміни</button>
+    <button onclick="cancelEdit()">Скасувати</button>
+  </div>
 
-  <label>
-    🔑 Ваш HuggingFace токен (начинается с hf_):
-    <input type="password" id="token" placeholder="hf_xxx..." />
-  </label>
-
-  <label>
-    🧠 Запрос к модели:
-    <textarea id="prompt" rows="5" placeholder="Введите ваш запрос...">Объясни квантовую запутанность простыми словами</textarea>
-  </label>
-
-  <button onclick="sendPrompt()">Отправить запрос</button>
-
-  <h3>📄 Ответ:</h3>
-  <pre id="output">Ожидание запроса...</pre>
+  <button onclick="downloadJSON()">Завантажити оновлений JSON</button>
 
   <script>
-    const API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct";
+    const fileId = "1zsSKz3rbPcjzXXGQ0MENVGyQgjIR_Ww6"; // ID твоего файла
+    const publicUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
 
-    async function sendPrompt() {
-      const token = document.getElementById('token').value.trim();
-      const prompt = document.getElementById('prompt').value;
-      const output = document.getElementById('output');
-      output.textContent = "⏳ Запрос отправлен, ожидаем ответ...";
+    let data = [];
+    let currentIndex = -1;
 
-      if (!token.startsWith("hf_")) {
-        output.textContent = "❗ Неверный токен доступа. Он должен начинаться с hf_";
-        return;
-      }
+    fetch(publicUrl)
+      .then(res => res.json())
+      .then(json => {
+        data = json;
+        renderTable();
+      })
+      .catch(err => {
+        document.getElementById('table-container').innerText = "Помилка: " + err;
+      });
 
-      try {
-        const response = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            inputs: prompt,
-            options: {
-              wait_for_model: true
-            }
-          })
-        });
+    function renderTable() {
+      let html = `<table><thead><tr>
+        <th>ПІБ</th><th>Дата народження</th><th>Телефон</th><th>Дії</th>
+      </tr></thead><tbody>`;
+      data.forEach((person, index) => {
+        html += `<tr>
+          <td>${person.fullname}</td>
+          <td>${person.birthdate}</td>
+          <td>${person.phone}</td>
+          <td><button onclick="edit(${index})">Редагувати</button></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      document.getElementById('table-container').innerHTML = html;
+    }
 
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`Ошибка ${response.status}: ${errText}`);
-        }
+    function edit(index) {
+      currentIndex = index;
+      const person = data[index];
+      document.getElementById('fullname').value = person.fullname || '';
+      document.getElementById('birthdate').value = person.birthdate || '';
+      document.getElementById('phone').value = person.phone || '';
+      document.getElementById('editor').style.display = 'block';
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
 
-        const data = await response.json();
+    function applyChanges() {
+      if (currentIndex === -1) return;
+      data[currentIndex].fullname = document.getElementById('fullname').value;
+      data[currentIndex].birthdate = document.getElementById('birthdate').value;
+      data[currentIndex].phone = document.getElementById('phone').value;
+      document.getElementById('editor').style.display = 'none';
+      renderTable();
+    }
 
-        if (Array.isArray(data) && data[0]?.generated_text) {
-          output.textContent = data[0].generated_text;
-        } else if (data.generated_text) {
-          output.textContent = data.generated_text;
-        } else {
-          output.textContent = JSON.stringify(data, null, 2);
-        }
+    function cancelEdit() {
+      currentIndex = -1;
+      document.getElementById('editor').style.display = 'none';
+    }
 
-      } catch (error) {
-        output.textContent = `🚫 Ошибка запроса:\n${error.message}`;
-      }
+    function downloadJSON() {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = "updated.json";
+      a.click();
     }
   </script>
-
 </body>
 </html>
-
