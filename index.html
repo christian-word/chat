@@ -223,7 +223,7 @@ async function loadData() {
   try {
     hideAll();
     document.getElementById('loading').style.display = 'block';
-    const res = await fetch('https://drive.google.com/uc?export=download&id=1BsQR7Q1HfDx1u0QeHnzY8gvlac2iUYFA');
+const res = await fetch('https://dl.dropboxusercontent.com/scl/fi/o2je5n0ib8v4zsjeq12ix/photo-database.json?rlkey=gm6ofx2gq2g8u8te976gwqs7d&dl=1');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     processData(json);
@@ -304,7 +304,7 @@ function createCard(p) {
   img.className = 'fallback-image';
   img.src = `https://drive.google.com/thumbnail?id=${p.id}&sz=w500`;
   img.onerror = () => {
-    img.src = 'https://raw.githubusercontent.com/ruyriy/Audio-christ/main/ICO/church_image.jpg';
+     img.src = 'https://raw.githubusercontent.com/ruyriy/Audio-christ/main/ICO/church_image.jpg';
   };
 
   card.appendChild(img);
@@ -313,14 +313,13 @@ function createCard(p) {
   info.className = 'info';
   info.innerHTML = `
     <strong>${p.lastname}</strong>
-    <div>${new Date(p.birthdate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</div>
+    <div>${new Date(p.birthdate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+    <div>${p.age} лет</div>
   `;
   card.appendChild(info);
 
   return card;
 }
-
-
 function updateSlider() {
   document.getElementById('slides-container').style.transform = `translateX(-${slideIndex * 100}%)`;
 }
