@@ -1,28 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Дані з Google Drive</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Дані з Google Drive</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Прізвище</th>
+                <th>Дата народження</th>
+                <th>Вік</th>
+                <th>Телефон</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Сюди вставлятимуться дані -->
+        </tbody>
+    </table>
+
+
+
 <script>
 async function loadData() {
   try {
-    // Добавляем timestamp для избежания кеширования
-    const url = "https://script.google.com/macros/s/AKfycbwsy1b34GD1qwJeoJE5OfjRAK3ttWU5LEkjP_FBifnRl8Gn5qGzuPhRcHyASRTUZvLk/exec?t=" + Date.now();
+    // ▼▼▼ ВСТАВЬТЕ НОВЫЙ URL СКРИПТА ▼▼▼
+    const GAS_URL = "https://script.google.com/macros/s/НОВЫЙ_ID/exec";
     
-    // Вариант 1: Через прокси
-    const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
-    const response = await fetch(proxyUrl);
+    const response = await fetch(GAS_URL);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
-    const realData = JSON.parse(data.contents);
+    console.log("Данные получены:", data);
     
-    // Вариант 2: Прямой запрос (если GAS настроен правильно)
-    // const response = await fetch(url);
-    // const realData = await response.json();
-    
-    console.log("Данные получены:", realData);
-    // Вставьте ваш код обработки данных здесь
+    // Обработка данных (пример):
+    const tableBody = document.getElementById("tableBody");
+    data.forEach(person => {
+      tableBody.innerHTML += `
+        <tr>
+          <td>${person.id}</td>
+          <td>${person.lastname}</td>
+          <td>${person.birthdate}</td>
+          <td>${person.age}</td>
+          <td>${person.phone}</td>
+        </tr>
+      `;
+    });
     
   } catch (error) {
     console.error("Ошибка:", error);
-    alert("Ошибка загрузки данных. Проверьте консоль.");
+    alert("Ошибка загрузки данных. Проверьте консоль (F12).");
   }
 }
 
-// Загружаем данные при открытии страницы
+// Запускаем при загрузке страницы
 window.addEventListener('DOMContentLoaded', loadData);
 </script>
+</body>
+</html> 
