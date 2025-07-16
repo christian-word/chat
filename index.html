@@ -2,35 +2,17 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дані з Google Drive</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
     <h1>Дані з Google Drive</h1>
-    <div id="loading">Завантаження даних...</div>
-    <table id="dataTable">
+    <table>
         <thead>
             <tr>
                 <th>ID</th>
@@ -40,47 +22,39 @@
                 <th>Телефон</th>
             </tr>
         </thead>
-        <tbody id="tableBody"></tbody>
+        <tbody id="tableBody">
+            <!-- Сюди вставлятимуться дані -->
+        </tbody>
     </table>
 
     <script>
-        // ID вашого файлу на Google Drive
-        const fileId = "1BsQR7Q1HfDx1u0QeHnzY8gvlac2iUYFA";
-        const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+        // ▼▼▼ ВСТАВЛЕНА ВАША ССЫЛКА ▼▼▼
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwsy1b34GD1qwJeoJE5OfjRAK3ttWU5LEkjP_FBifnRl8Gn5qGzuPhRcHyASRTUZvLk/exec";
 
-        // Завантаження та відображення даних
-        fetch(downloadUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Помилка завантаження файлу");
-                }
-                return response.json();
-            })
+        fetch(GAS_URL)
+            .then(response => response.json())
             .then(data => {
                 const tableBody = document.getElementById("tableBody");
-                const loadingDiv = document.getElementById("loading");
                 
-                loadingDiv.style.display = "none"; // Приховуємо "Завантаження..."
+                // Очищаємо таблицю (якщо потрібно)
+                tableBody.innerHTML = "";
 
-                if (!Array.isArray(data)) {
-                    throw new Error("Дані мають бути масивом");
-                }
-
+                // Заповнюємо таблицю даними
                 data.forEach(person => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `
-                        <td>${person.id}</td>
-                        <td>${person.lastname}</td>
-                        <td>${person.birthdate}</td>
-                        <td>${person.age}</td>
-                        <td>${person.phone}</td>
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${person.id}</td>
+                            <td>${person.lastname}</td>
+                            <td>${person.birthdate}</td>
+                            <td>${person.age}</td>
+                            <td>${person.phone}</td>
+                        </tr>
                     `;
-                    tableBody.appendChild(row);
                 });
             })
             .catch(error => {
                 console.error("Помилка:", error);
-                document.getElementById("loading").textContent = "Сталася помилка: " + error.message;
+                alert("Не вдалося завантажити дані. Перевірте консоль (F12).");
             });
     </script>
 </body>
