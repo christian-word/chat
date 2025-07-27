@@ -2,30 +2,1275 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <title>Звітність ДПС</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Іменинники</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #43e97b 100%);
+      min-height: 100vh;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* Стили для экрана входа */
+    .login-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 3rem;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    .login-card h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #43e97b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .login-card .subtitle {
+      color: #666;
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .password-input {
+      padding: 15px 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #ffffff;
+    }
+
+    .password-input:focus {
+      outline: none;
+      border-color: #00f2fe;
+      box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .remember-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .login-btn {
+      padding: 15px 30px;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
+    }
+
+    .error-msg {
+      color: #e53e3e;
+      background: rgba(254, 178, 178, 0.2);
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    /* Основное приложение */
+    .main-app {
+      display: none;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    .logout-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      opacity: 0;
+      animation: fadeInUp 1s ease-out forwards;
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      opacity: 0;
+      animation: fadeInUp 1s ease-out 0.2s forwards;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .filters {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 2rem;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      opacity: 0;
+      animation: fadeInUp 1s ease-out 0.2s forwards;
+    }
+    
+    .filter-group {
+      position: relative;
+    }
+    
+    .filter-group label {
+      display: block;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    input[type="text"], select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #ffffff;
+      color: #2d3748;
+    }
+    
+    input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: #00f2fe;
+      box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.1);
+      transform: translateY(-2px);
+    }
+    
+    .stats {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 1.5rem;
+      border-radius: 16px;
+      margin-bottom: 2rem;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #4a5568;
+      opacity: 0;
+      animation: fadeInUp 1s ease-out 0.4s forwards;
+    }
+    
+    .stats strong {
+      color: #00a8cc;
+      font-weight: 700;
+    }
+    
+    .month-group {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: slideInUp 0.6s ease-out forwards;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .month-group::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #4facfe, #00f2fe, #43e97b);
+    }
+    
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .month-group h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: #00a8cc;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .month-group h2::before {
+      content: "🎂";
+      font-size: 1.5rem;
+    }
+    
+    .person-card {
+      display: flex;
+      align-items: center;
+      padding: 1.5rem;
+      border-radius: 16px;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .person-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 242, 254, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .person-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+      border-color: #00f2fe;
+    }
+    
+    .person-card:hover::before {
+      left: 100%;
+    }
+    
+    .person-photo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 1.5rem;
+      cursor: pointer;
+      border: 3px solid #ffffff;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .person-photo:hover {
+      transform: scale(1.1);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+    
+    .person-photo.no-photo {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.8rem;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .person-info {
+      flex: 1;
+      position: relative;
+    }
+    
+    .person-name {
+      font-weight: 700;
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+      color: #2d3748;
+    }
+    
+    .person-details {
+      color: #718096;
+      font-size: 0.95rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.5rem;
+    }
+    
+    .person-details div {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .person-details div::before {
+      content: "📅";
+      font-size: 0.9rem;
+    }
+    
+    .person-details div:nth-child(2)::before {
+      content: "🎯";
+    }
+    
+    .person-details div:nth-child(3)::before {
+      content: "⏰";
+    }
+    
+    .person-details div:nth-child(4)::before {
+      content: "📞";
+    }
+    
+    .loading, .error {
+      text-align: center;
+      padding: 3rem;
+      font-size: 1.2rem;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      margin: 2rem 0;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .loading {
+      color: #00a8cc;
+      position: relative;
+    }
+    
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      margin: -15px 0 0 -15px;
+      border: 3px solid rgba(0, 168, 204, 0.3);
+      border-top: 3px solid #00a8cc;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error {
+      color: #e53e3e;
+      background: rgba(254, 178, 178, 0.9);
+      border: 2px solid #feb2b2;
+    }
+    
+    .no-results {
+      text-align: center;
+      padding: 3rem;
+      color: #a0aec0;
+      font-style: italic;
+      font-size: 1.2rem;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    /* Модальное окно */
+    #modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0,0,0,0.9);
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+    }
+    
+    #modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 20px;
+      box-shadow: 0 0 50px rgba(0,0,0,0.5);
+      animation: modalZoom 0.3s ease-out;
+    }
+    
+    @keyframes modalZoom {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .close-modal {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    
+    .close-modal:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    .holiday-card {
+      background: #fff9e5;
+      border: 2px solid #f5c36d;
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1em auto;
+      max-width: 600px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .holiday-card h3 {
+      margin-top: 0;
+      font-size: 1.3em;
+      color: #cc8500;
+    }
+    .holiday-card ul {
+      margin: 0;
+      padding-left: 1.2em;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+    
+    @media (max-width: 768px) {
+      .login-card {
+        padding: 2rem;
+        margin: 10px;
+      }
+
+      .logout-btn {
+        position: static;
+        margin-bottom: 1rem;
+      }
+
+      .header {
+        text-align: center;
+      }
+      
+      .container {
+        padding: 0.5rem;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+      }
+      
+      .subtitle {
+        font-size: 1rem;
+      }
+      
+      .filters {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      
+      .stats {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+      }
+      
+      .person-card {
+        flex-direction: row;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        align-items: flex-start;
+      }
+      
+      .person-photo {
+        width: 60px;
+        height: 60px;
+        margin-right: 1rem;
+        margin-bottom: 0;
+        flex-shrink: 0;
+      }
+      
+      .person-info {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      .person-name {
+        font-size: 1.1rem;
+        margin-bottom: 0.3rem;
+      }
+      
+      .person-details {
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
+        font-size: 0.85rem;
+      }
+      
+      .person-details div {
+        gap: 0.3rem;
+      }
+      
+      .person-details div::before {
+        font-size: 0.8rem;
+        flex-shrink: 0;
+      }
+      
+      .month-group {
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      
+      .month-group h2 {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+      }
+    }
+    
+    /* Анимация появления карточек */
+    .person-card {
+      animation: fadeInCard 0.6s ease-out forwards;
+    }
+    
+    @keyframes fadeInCard {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Плавающие частицы на фоне */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      animation: float 15s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Перевірка API ДПС</h1>
-  <pre id="result">Очікування відповіді...</pre>
+  <div class="particles"></div>
+  
+  <!-- Экран входа -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <h1>🎉</h1>
+      <div class="subtitle">Церква ЄХБ 'Дім Євангелія'</div>
+      <form class="login-form" id="loginForm">
+        <input 
+          type="password" 
+          id="passwordInput" 
+          class="password-input" 
+          placeholder="Введіть пароль общини" 
+          required
+        >
+        <div class="remember-checkbox">
+          <input type="checkbox" id="rememberMe">
+          <label for="rememberMe">Запам'ятати мене</label>
+        </div>
+        <button type="submit" class="login-btn">Увійти</button>
+        <div id="errorMsg" class="error-msg">Невірний пароль</div>
+      </form>
+    </div>
+  </div>
 
-  <script>
-    const token = "60673475-f0f0-401a-8645-9c5dacf78ba8";
+  <!-- Основное приложение -->
+  <div id="mainApp" class="main-app">
+    <div class="container">
+      <div class="header">
+        <button id="logoutBtn" class="logout-btn">Вийти</button>
+        <h1>🎉 Іменинники</h1>
+        <div class="subtitle">Церква ЄХБ 'Дім Євангелія',.</div>
+        <div class="subtitle">м.Суми, © 2025р.</div>
+      </div>
+      
+      <div id="holidayCard" class="holiday-card" style="display:none;"></div>
+      
+      <div id="birthdayList"></div> 
 
-    // Пример открытого запроса: реестр КПП
-    fetch("https://cabinet.tax.gov.ua/ws/public_api/common/kpp", {
-      headers: {
-        "Authorization": token,
-        "Accept": "application/json"
+      <div id="todayList" class="month-group hidden">
+        <h3>🎁 Іменинники сьогодні</h3>
+        <div id="todayCards"></div>
+      </div>   
+   
+      <div class="filters">
+        <div class="filter-group">
+          <label for="search">Пошук</label>
+          <input type="text" id="search" placeholder="Введіть ім'я для пошуку...">
+        </div>
+        
+        <div class="filter-group">
+          <label for="monthFilter">Місяць</label>
+          <select id="monthFilter">
+            <option value="">Всі місяці</option>
+            <option value="0">Січень</option>
+            <option value="1">Лютий</option>
+            <option value="2">Березень</option>
+            <option value="3">Квітень</option>
+            <option value="4">Травень</option>
+            <option value="5">Червень</option>
+            <option value="6">Липень</option>
+            <option value="7">Серпень</option>
+            <option value="8">Вересень</option>
+            <option value="9">Жовтень</option>
+            <option value="10">Листопад</option>
+            <option value="11">Грудень</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="photoFilter">Фото</label>
+          <select id="photoFilter">
+            <option value="">Всі</option>
+            <option value="with">З фото</option>
+            <option value="without">Без фото</option>
+          </select>
+        </div>
+      </div>
+      
+      <div id="stats" class="stats"></div>
+      <div id="loading" class="loading">Завантаження даних...</div>
+      <div id="error" class="error hidden"></div>
+      <div id="list"></div>
+    </div>
+  </div>
+  
+  <!-- Модальное окно -->
+  <div id="modal">
+    <button class="close-modal">&times;</button>
+    <img id="modal-img" src="" alt="Фото" />
+  </div>
+
+  <button id="toTop" style="position:fixed;bottom:20px;right:20px;padding:10px 15px;border:none;border-radius:10px;background:#00a8cc;color:white;font-size:1.2rem;display:none;z-index:1000;box-shadow:0 5px 15px rgba(0,0,0,0.3);cursor:pointer;">↑</button>
+
+<script>
+// НАСТРОЙКИ
+const CORRECT_PASSWORD = '123211'; // Измените на ваш пароль
+const SESSION_KEY = 'church_auth';
+
+// Проверка авторизации при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+  if (isAuthenticated()) {
+    showMainApp();
+  } else {
+    showLoginScreen();
+  }
+  createParticles();
+  
+  // Добавляем обработчики событий здесь, после загрузки DOM
+  setupEventListeners();
+});
+
+// Настройка всех обработчиков событий
+function setupEventListeners() {
+  // Обработка формы входа
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const password = document.getElementById('passwordInput').value;
+    const remember = document.getElementById('rememberMe').checked;
+    const errorMsg = document.getElementById('errorMsg');
+    
+    if (password === CORRECT_PASSWORD) {
+      // Успешный вход
+      sessionStorage.setItem(SESSION_KEY, 'true');
+      
+      if (remember) {
+        localStorage.setItem(SESSION_KEY, 'true');
       }
-    })
-      .then(res => res.ok ? res.json() : Promise.reject(res.statusText))
-      .then(data => {
-        document.getElementById("result").textContent = JSON.stringify(data, null, 2);
-      })
-      .catch(err => {
-        document.getElementById("result").textContent = "Помилка: " + err;
-      });
-  </script>
+      
+      errorMsg.style.display = 'none';
+      showMainApp();
+    } else {
+      // Неверный пароль
+      errorMsg.style.display = 'block';
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('passwordInput').focus();
+    }
+  });
+
+  // Кнопка выхода
+  document.getElementById('logoutBtn').addEventListener('click', function() {
+    console.log('Выход нажат'); // Для отладки
+    
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    
+    // Очистка данных
+    allPeople = [];
+    filteredPeople = [];
+    document.getElementById('list').innerHTML = '';
+    document.getElementById('stats').innerHTML = '';
+    
+    showLoginScreen();
+  });
+
+  // Фильтры
+  document.getElementById('search').addEventListener('input', applyFilters);
+  document.getElementById('monthFilter').addEventListener('change', applyFilters);
+  document.getElementById('photoFilter').addEventListener('change', applyFilters);
+
+  // Закрытие модального окна
+  document.getElementById('modal').addEventListener('click', (e) => {
+    if (e.target.id === 'modal') closeModal();
+  });
+  document.querySelector('.close-modal').addEventListener('click', closeModal);
+
+  // Закрытие модального окна по Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Кнопка наверх
+  window.addEventListener('scroll', () => {
+    const toTopBtn = document.getElementById('toTop');
+    if (toTopBtn) {
+      toTopBtn.style.display = window.scrollY > 300 ? 'block' : 'none';
+    }
+  });
+  
+  const toTopBtn = document.getElementById('toTop');
+  if (toTopBtn) {
+    toTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+}
+
+// Проверка, авторизован ли пользователь
+function isAuthenticated() {
+  const auth = sessionStorage.getItem(SESSION_KEY);
+  const remember = localStorage.getItem(SESSION_KEY);
+  return auth === 'true' || remember === 'true';
+}
+
+// Показать экран входа
+function showLoginScreen() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+  
+  // Фокус на поле пароля
+  setTimeout(() => {
+    const passwordInput = document.getElementById('passwordInput');
+    if (passwordInput) {
+      passwordInput.focus();
+      passwordInput.value = ''; // Очищаем поле
+    }
+  }, 100);
+}
+
+// Показать основное приложение
+function showMainApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  loadData();
+  showHolidayCardIfNeeded();
+}
+
+// Функция создания частиц
+function createParticles() {
+  const particles = document.querySelector('.particles');
+  if (!particles) return;
+  
+  // Очищаем старые частицы
+  particles.innerHTML = '';
+  
+  for (let i = 0; i < 50; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.left = Math.random() * 100 + '%';
+    particle.style.animationDelay = Math.random() * 15 + 's';
+    particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+    particles.appendChild(particle);
+  }
+}
+
+// Вычисление Пасхи по Григорианскому календарю
+function getWesternEaster(year) {
+  const f = Math.floor,
+    a = year % 19,
+    b = f(year / 100),
+    c = year % 100,
+    d = f(b / 4),
+    e = b % 4,
+    f1 = f((b + 8) / 25),
+    g = f((b - f1 + 1) / 3),
+    h = (19 * a + b - d - g + 15) % 30,
+    i = f(c / 4),
+    k = c % 4,
+    l = (32 + 2 * e + 2 * i - h - k) % 7,
+    m = f((a + 11 * h + 22 * l) / 451),
+    month = f((h + l - 7 * m + 114) / 31),
+    day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+// Основные праздники
+function getChristianHolidays(year) {
+  const easter = getWesternEaster(year);
+  const ms = 24 * 60 * 60 * 1000;
+
+  return [
+    { name: "Різдво Христове", date: new Date(year, 11, 25) },
+    { name: "Воскресіння Христове (Пасха)", date: easter },
+    { name: "Вознесіння Господнє", date: new Date(easter.getTime() + 39 * ms) },
+    { name: "День П'ятидесятниці", date: new Date(easter.getTime() + 49 * ms) },
+    { name: "Новий Рік", date: new Date(year, 0, 1) },
+  ];
+}
+
+// Проверка: входит ли дата в заданную неделю
+function isDateInWeek(date, weekStart) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return d >= weekStart && d < new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+}
+
+// Вывод карточки с праздниками
+function showHolidayCardIfNeeded() {
+  const today = new Date();
+  const currentWeekStart = new Date(today);
+  currentWeekStart.setDate(today.getDate() - today.getDay()); // Воскресенье
+
+  const holidays = getChristianHolidays(today.getFullYear())
+    .filter(h => isDateInWeek(h.date, currentWeekStart));
+
+  if (holidays.length === 0) return;
+
+  const holidayCard = document.createElement('div');
+  holidayCard.className = 'holiday-card';
+  holidayCard.innerHTML = `
+    <h3>Християнські свята цього тижня</h3>
+    <ul>
+      ${holidays.map(h => `<li><strong>${h.name}</strong> — ${h.date.toLocaleDateString('uk-UA')}</li>`).join('')}
+    </ul>
+  `;
+
+  const target = document.getElementById('holidayCard');
+  if (target) {
+    target.innerHTML = holidayCard.innerHTML;
+    target.style.display = 'block';
+  }
+}
+
+// Функция для создания ссылок на телефоны
+function linkifyPhones(text) {
+  const phoneRegex = /(\+?\d[\d\s\-().]{5,}\d)/g;
+  return text.replace(phoneRegex, match => {
+    const cleaned = match.replace(/[^\d+]/g, '');
+    return `<a href="tel:${cleaned}">${match}</a>`;
+  });
+}
+
+// Переменные для данных
+const fileId = '1BsQR7Q1HfDx1u0QeHnzY8gvlac2iUYFA';
+const apiKey = 'AIzaSyAlxAoAyke0AAkiI3akNyWLNVwtoycjkgA';
+
+let allPeople = [];
+let filteredPeople = [];
+
+const monthNames = [
+  'Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень',
+  'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'
+];
+
+// Загрузка данных
+async function loadData() {
+  try {
+    hideAll();
+    document.getElementById('loading').classList.remove('hidden');
+
+    const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    
+    allPeople = json.entries.map(person => {
+      const birthDate = new Date(person.birthdate);
+      const age = calculateAge(birthDate);
+      
+      return {
+        name: person.lastname,
+        birthDate: birthDate,
+        age: age,
+        phone: person.phone || '',
+        id: person.id || '',
+        hasPhoto: !!(person.id && person.id.trim())
+      };
+    });
+    
+    filteredPeople = [...allPeople];
+    renderData();
+    
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+function hideAll() {
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('error').classList.add('hidden');
+  document.getElementById('list').innerHTML = '';
+  document.getElementById('stats').innerHTML = '';
+}
+
+function showError(msg) {
+  hideAll();
+  const err = document.getElementById('error');
+  err.textContent = 'Помилка завантаження: ' + msg;
+  err.classList.remove('hidden');
+}
+
+function calculateAge(birthDate) {
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+  return age;
+}
+
+function openModal(src) {
+  const modal = document.getElementById('modal');
+  const img = document.getElementById('modal-img');
+  img.src = src;
+  modal.style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+function applyFilters() {
+  const searchTerm = document.getElementById('search').value.toLowerCase();
+  const monthFilter = document.getElementById('monthFilter').value;
+  const photoFilter = document.getElementById('photoFilter').value;
+  
+  filteredPeople = allPeople.filter(person => {
+    const matchesSearch = person.name.toLowerCase().includes(searchTerm);
+    const matchesMonth = monthFilter === '' || person.birthDate.getMonth() === parseInt(monthFilter);
+    
+    let matchesPhoto = true;
+    if (photoFilter === 'with') {
+      matchesPhoto = person.hasPhoto;
+    } else if (photoFilter === 'without') {
+      matchesPhoto = !person.hasPhoto;
+    }
+    
+    return matchesSearch && matchesMonth && matchesPhoto;
+  });
+  
+  renderData();
+}
+
+function renderData() {
+  hideAll();
+
+  const stats = document.getElementById('stats');
+  const withPhoto = filteredPeople.filter(p => p.hasPhoto).length;
+  const withoutPhoto = filteredPeople.filter(p => !p.hasPhoto).length;
+
+  stats.innerHTML = `
+    <strong>Всього: ${filteredPeople.length}</strong> | 
+    З фото: ${withPhoto} | 
+    Без фото: ${withoutPhoto}
+  `;
+
+  if (filteredPeople.length === 0) {
+    document.getElementById('list').innerHTML = '<div class="no-results">🔍 Нічого не знайдено</div>';
+    return;
+  }
+
+  const today = new Date();
+  const todayPeople = filteredPeople.filter(p =>
+    p.birthDate.getDate() === today.getDate() &&
+    p.birthDate.getMonth() === today.getMonth()
+  );
+
+  const todayBlock = document.getElementById('todayList');
+  const todayCards = document.getElementById('todayCards');
+  todayCards.innerHTML = '';
+
+  if (todayPeople.length > 0) {
+    todayBlock.classList.remove('hidden');
+
+    todayPeople.forEach((person, index) => {
+      const card = document.createElement('div');
+      card.className = 'person-card';
+      card.style.animationDelay = (index * 0.05) + 's';
+      card.style.background = '#fff3cd';
+      card.style.borderColor = '#ff9900';
+      card.style.boxShadow = '0 0 15px rgba(255, 153, 0, 0.6)';
+
+      const photo = document.createElement('div');
+      if (person.hasPhoto) {
+        const img = document.createElement('img');
+        img.src = `https://drive.google.com/thumbnail?id=${person.id}&sz=w200`;
+        img.alt = person.name;
+        img.className = 'person-photo';
+        img.onerror = () => {
+          img.src = 'https://raw.githubusercontent.com/christian-word/slider/main/4054617.png';
+        };
+        img.onclick = () => openModal(`https://drive.google.com/thumbnail?id=${person.id}&sz=w1000`);
+        photo.appendChild(img);
+      } else {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'person-photo no-photo';
+        placeholder.textContent = 'Немає фото';
+        photo.appendChild(placeholder);
+      }
+
+      const info = document.createElement('div');
+      info.className = 'person-info';
+
+      const name = document.createElement('div');
+      name.className = 'person-name';
+      name.textContent = person.name;
+
+      const details = document.createElement('div');
+      details.className = 'person-details';
+
+      const birthDateStr = person.birthDate.toLocaleDateString('uk-UA');
+      const birthYear = person.birthDate.getFullYear();
+
+      details.innerHTML = `
+        <div>Дата народження: ${birthDateStr}</div>
+        <div>Рік: ${birthYear}</div>
+        <div>Вік: ${person.age} років</div>
+        ${person.phone ? `<div>Телефон: ${linkifyPhones(person.phone)}</div>` : ''}
+      `;
+
+      info.appendChild(name);
+      info.appendChild(details);
+      card.appendChild(photo);
+      card.appendChild(info);
+      todayCards.appendChild(card);
+    });
+
+  } else {
+    todayBlock.classList.add('hidden');
+  }
+
+  const peopleByMonth = {};
+  filteredPeople.forEach(person => {
+    const month = person.birthDate.getMonth();
+    if (!peopleByMonth[month]) {
+      peopleByMonth[month] = [];
+    }
+    peopleByMonth[month].push(person);
+  });
+
+  Object.keys(peopleByMonth).forEach(month => {
+    peopleByMonth[month].sort((a, b) => a.birthDate.getDate() - b.birthDate.getDate());
+  });
+
+  const container = document.getElementById('list');
+  container.innerHTML = '';
+
+  Object.keys(peopleByMonth).sort((a, b) => a - b).forEach((month, index) => {
+    const monthGroup = document.createElement('div');
+    monthGroup.className = 'month-group';
+    monthGroup.style.animationDelay = (index * 0.1) + 's';
+
+    const title = document.createElement('h2');
+    title.textContent = `${monthNames[month]} (${peopleByMonth[month].length})`;
+    monthGroup.appendChild(title);
+
+    peopleByMonth[month].forEach((person, personIndex) => {
+      const card = document.createElement('div');
+      const isToday = (() => {
+        const today = new Date();
+        return person.birthDate.getDate() === today.getDate() &&
+               person.birthDate.getMonth() === today.getMonth();
+      })();
+      if (isToday) {
+        card.style.background = '#fff3cd';
+        card.style.borderColor = '#ff9900';
+        card.style.boxShadow = '0 0 15px rgba(255, 153, 0, 0.6)';
+      }
+
+      card.className = 'person-card';
+      card.style.animationDelay = (index * 0.1 + personIndex * 0.05) + 's';
+
+      const photo = document.createElement('div');
+      if (person.hasPhoto) {
+        const img = document.createElement('img');
+        img.src = `https://drive.google.com/thumbnail?id=${person.id}&sz=w200`;
+        img.alt = person.name;
+        img.className = 'person-photo';
+        img.onerror = () => {
+          img.src = 'https://raw.githubusercontent.com/christian-word/slider/main/4054617.png';
+        };
+        img.onclick = () => openModal(`https://drive.google.com/thumbnail?id=${person.id}&sz=w1000`);
+        photo.appendChild(img);
+      } else {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'person-photo no-photo';
+        placeholder.textContent = 'Немає фото';
+        photo.appendChild(placeholder);
+      }
+
+      const info = document.createElement('div');
+      info.className = 'person-info';
+
+      const name = document.createElement('div');
+      name.className = 'person-name';
+      name.textContent = person.name;
+
+      const details = document.createElement('div');
+      details.className = 'person-details';
+
+      const birthDateStr = person.birthDate.toLocaleDateString('uk-UA');
+      const birthYear = person.birthDate.getFullYear();
+
+      details.innerHTML = `
+        <div>Дата народження: ${birthDateStr}</div>
+        <div>Рік: ${birthYear}</div>
+        <div>Вік: ${person.age} років</div>
+        ${person.phone ? `<div>Телефон: ${linkifyPhones(person.phone)}</div>` : ''}
+      `;
+
+      info.appendChild(name);
+      info.appendChild(details);
+      card.appendChild(photo);
+      card.appendChild(info);
+      monthGroup.appendChild(card);
+    });
+
+    container.appendChild(monthGroup);
+  });
+}
+</script>
 </body>
 </html>
-
