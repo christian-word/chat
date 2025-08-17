@@ -1,0 +1,1613 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Біблійний чат — з сесіями</title>
+
+<!-- Подключаем Bible API -->
+<script src="https://christian-word.github.io/bible-engine/bible-API.js"></script>
+
+<style>
+:root {
+  --accent: #ffcc00;
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --text: #222;
+  --muted: #666;
+  --primary: #1a73e8;
+  --success: #2f7d32;
+  --danger: #b00020;
+  --sidebar: #f8f9fa;
+  --border: #e5e5e5;
+  --hover: #f0f0f0;
+}
+
+[data-theme="dark"] {
+  --bg: #1a1a1a;
+  --card: #2d2d2d;
+  --text: #ffffff;
+  --muted: #aaaaaa;
+  --sidebar: #252525;
+  --border: #444;
+  --hover: #383838;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0; 
+  background: var(--bg); 
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  display: flex; 
+  height: 100vh; 
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+#sidebar {
+  width: 280px; 
+  background: var(--sidebar); 
+  border-right: 1px solid var(--border);
+  display: flex; 
+  flex-direction: column; 
+  transition: transform 0.3s ease;
+}
+
+#sidebar-header {
+  padding: 16px; 
+  border-bottom: 1px solid var(--border);
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
+}
+
+#sidebar-header h2 {
+  margin: 0; 
+  font-size: 16px; 
+  font-weight: 600;
+}
+
+#new-session-btn {
+  background: var(--primary); 
+  color: white; 
+  border: none; 
+  border-radius: 8px;
+  padding: 8px 12px; 
+  cursor: pointer; 
+  font-size: 12px; 
+  font-weight: 600;
+  display: flex; 
+  align-items: center; 
+  gap: 4px;
+}
+
+#sessions-list {
+  flex: 1; 
+  overflow-y: auto; 
+  padding: 8px;
+}
+
+.session-item {
+  padding: 12px; 
+  margin: 4px 0; 
+  border-radius: 8px; 
+  cursor: pointer;
+  border: 1px solid transparent; 
+  background: transparent;
+  transition: all 0.2s ease; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px;
+  position: relative;
+}
+
+.session-item:hover {
+  background: var(--hover);
+}
+
+.session-item.active {
+  background: var(--card); 
+  border-color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+.session-title {
+  flex: 1; 
+  font-size: 14px; 
+  font-weight: 500;
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+
+.session-subtitle {
+  font-size: 12px; 
+  color: var(--muted);
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+
+.session-actions {
+  opacity: 0; 
+  display: flex; 
+  gap: 4px; 
+  transition: opacity 0.2s;
+}
+
+.session-item:hover .session-actions {
+  opacity: 1;
+}
+
+.session-action-btn {
+  background: none; 
+  border: none; 
+  cursor: pointer; 
+  padding: 4px;
+  border-radius: 4px; 
+  color: var(--muted); 
+  font-size: 12px;
+}
+
+.session-action-btn:hover {
+  background: var(--hover); 
+  color: var(--text);
+}
+
+/* MAIN CONTENT */
+#main-content {
+  flex: 1; 
+  display: flex; 
+  flex-direction: column;
+}
+
+#chat-header {
+  padding: 12px 16px; 
+  border-bottom: 1px solid var(--border);
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 12px;
+  background: var(--card);
+}
+
+#current-session-title {
+  font-size: 16px; 
+  font-weight: 600; 
+  margin: 0;
+  flex: 1; 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+
+#chat-header div[style*="font-size: 11px"] {
+  font-size: 9px !important;
+  margin-top: 1px !important;
+}
+
+#mobile-menu-btn {
+  display: none; 
+  background: none; 
+  border: none; 
+  font-size: 18px;
+  cursor: pointer; 
+  padding: 8px; 
+  color: var(--text);
+}
+
+/* CONTROLS PANEL */
+#controls {
+  padding: 12px 16px; 
+  background: var(--card); 
+  border-bottom: 1px solid var(--border);
+  display: grid; 
+  grid-template-columns: 1fr 120px 80px; 
+  gap: 8px; 
+  align-items: center;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  max-height: 200px;
+}
+
+#controls.hidden {
+  max-height: 0;
+  padding: 0 16px;
+  opacity: 0;
+  border-bottom: none;
+  margin: 0;
+}
+
+#controls.visible {
+  max-height: 200px;
+  padding: 12px 16px;
+  opacity: 1;
+  margin: 0;
+}
+
+#model { 
+  width: 100%; 
+  padding: 8px 10px; 
+  border: 1px solid var(--border); 
+  border-radius: 8px; 
+}
+
+#help-btn, #theme-btn {
+  padding: 8px 12px; 
+  border: 0; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 600;
+  background: var(--hover); 
+  font-size: 12px;
+}
+
+/* CONTROLS TOGGLE BUTTON */
+#controls-toggle-btn {
+  background: none; 
+  border: none; 
+  font-size: 16px;
+  cursor: pointer; 
+  padding: 8px; 
+  color: var(--text);
+  border-radius: 6px; 
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+#controls-toggle-btn:hover {
+  background: var(--hover);
+}
+
+#chat {
+  flex: 1; 
+  padding: 16px; 
+  overflow-y: auto; 
+  background: var(--bg);
+}
+
+.msg { 
+  margin: 8px 0 16px; 
+  line-height: 1.5; 
+}
+
+.role { 
+  font-weight: 700; 
+  margin-right: 6px; 
+}
+
+.ai .role { 
+  color: var(--primary); 
+}
+
+.you .role { 
+  color: var(--success); 
+}
+
+#input-area {
+  padding: 16px; 
+  background: var(--card); 
+  border-top: 1px solid var(--border);
+  display: grid; 
+  grid-template-columns: 1fr auto; 
+  gap: 10px;
+}
+
+#user-input { 
+  padding: 12px; 
+  font-size: 16px; 
+  border: 1px solid var(--border); 
+  border-radius: 8px; 
+  background: var(--bg);
+}
+
+#send-btn { 
+  padding: 10px 16px; 
+  border: 0; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  background: var(--success); 
+  color: #fff; 
+}
+
+#send-btn:disabled { 
+  opacity: .6; 
+  cursor: not-allowed; 
+}
+
+.muted { 
+  color: var(--muted); 
+}
+
+.bible-ref { 
+  color: var(--primary); 
+  text-decoration: underline; 
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bible-ref:hover {
+  background-color: rgba(26, 115, 232, 0.1);
+  border-radius: 3px;
+}
+
+a.inline { 
+  color: var(--primary); 
+  text-decoration: underline; 
+  word-break: break-all; 
+}
+
+/* MOBILE STYLES */
+@media (max-width: 768px) {
+  body { 
+    flex-direction: column; 
+  }
+  
+  #sidebar {
+    position: fixed; 
+    left: 0; 
+    top: 0; 
+    height: 100%; 
+    z-index: 1000;
+    transform: translateX(-100%); 
+    width: 280px;
+  }
+  
+  #sidebar.open {
+    transform: translateX(0);
+  }
+  
+  #sidebar-overlay {
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0,0,0,0.5);
+    display: none; 
+    z-index: 999;
+  }
+  
+  #sidebar-overlay.open {
+    display: block;
+  }
+  
+  #main-content {
+    width: 100%; 
+    height: 100vh;
+  }
+  
+  #mobile-menu-btn {
+    display: block;
+  }
+  
+  #chat-header {
+    padding: 12px 16px;
+  }
+  
+  #current-session-title {
+    font-size: 14px;
+  }
+  
+  /* MOBILE CONTROLS */
+  #controls {
+    padding: 12px 16px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    max-height: 180px;
+  }
+  
+  #controls.hidden {
+    max-height: 0;
+    padding: 0 16px;
+    margin: 0;
+    border: none;
+  }
+  
+  #controls.visible {
+    max-height: 180px;
+    padding: 12px 16px;
+  }
+  
+  #model {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 30px;
+  }
+  
+  #controls-row2 {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  
+  #help-btn, #theme-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+  }
+  
+  #controls-toggle-btn {
+    font-size: 20px;
+    padding: 10px;
+  }
+  
+  #chat {
+    padding: 12px;
+  }
+  
+  #input-area {
+    padding: 12px;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  #user-input {
+    padding: 12px;
+    font-size: 16px;
+  }
+  
+  #send-btn {
+    padding: 12px;
+    width: 100%;
+  }
+  
+  .session-item {
+    padding: 16px 12px;
+  }
+  
+  .session-title {
+    font-size: 15px;
+  }
+}
+
+/* MODAL */
+.modal-backdrop {
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0,0,0,.4);
+  display: none; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 2000;
+}
+
+.modal {
+  width: min(600px, 90vw); 
+  max-height: 80vh; 
+  overflow-y: auto;
+  background: var(--card); 
+  border-radius: 12px; 
+  box-shadow: 0 12px 40px rgba(0,0,0,.3);
+  padding: 20px;
+}
+
+.modal h2 { 
+  margin: 0 0 16px; 
+  font-size: 18px; 
+}
+
+.modal-footer { 
+  display: flex; 
+  gap: 8px; 
+  justify-content: flex-end; 
+  margin-top: 16px; 
+}
+
+.btn-primary { 
+  background: var(--primary); 
+  color: #fff; 
+  border: 0; 
+  border-radius: 8px; 
+  padding: 10px 16px; 
+  font-weight: 600; 
+  cursor: pointer; 
+}
+
+.btn-secondary { 
+  background: var(--hover); 
+  color: var(--text); 
+  border: 0; 
+  border-radius: 8px; 
+  padding: 10px 16px; 
+  font-weight: 600; 
+  cursor: pointer; 
+}
+
+/* RENAME INPUT */
+.rename-input {
+  width: 100%; 
+  padding: 8px; 
+  border: 1px solid var(--border); 
+  border-radius: 6px; 
+  font-size: 14px; 
+  background: var(--bg);
+}
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center; 
+  padding: 40px 20px; 
+  color: var(--muted);
+}
+
+.empty-state h3 {
+  margin: 0 0 8px; 
+  font-size: 16px; 
+  color: var(--text);
+}
+
+.empty-state p {
+  margin: 0; 
+  font-size: 14px; 
+  line-height: 1.4;
+}
+
+/* SCROLL */
+#sessions-list::-webkit-scrollbar,
+#chat::-webkit-scrollbar {
+  width: 6px;
+}
+
+#sessions-list::-webkit-scrollbar-track,
+#chat::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#sessions-list::-webkit-scrollbar-thumb,
+#chat::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* ANIMATIONS */
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.session-item.new {
+  animation: slideIn 0.3s ease;
+}
+
+/* THEME TOGGLE */
+[data-theme="dark"] #model,
+[data-theme="dark"] #user-input,
+[data-theme="dark"] .rename-input {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] #help-btn,
+[data-theme="dark"] #theme-btn {
+  background: var(--hover);
+  color: var(--text);
+}
+
+[data-theme="dark"] .modal {
+  background: var(--card);
+  color: var(--text);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: var(--hover);
+  color: var(--text);
+}
+
+/* BIBLE MODAL SPECIFIC STYLES */
+.verse-content {
+  line-height: 1.6;
+  font-size: 16px;
+  margin: 16px 0;
+}
+
+.verse-content b {
+  color: var(--primary);
+  margin-right: 4px;
+}
+
+/* LOADING STATE */
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
+  margin-left: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR OVERLAY (MOBILE) -->
+<div id="sidebar-overlay"></div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <h2>📖 Сесії</h2>
+    <button id="new-session-btn">➕ Нова</button>
+  </div>
+  <div id="sessions-list">
+    <!-- Sessions будут добавляться сюда динамически -->
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main id="main-content">
+  <header id="chat-header">
+    <button id="mobile-menu-btn">☰</button>
+    <div style="flex: 1; min-width: 0;">
+      <h1 id="current-session-title">Нова сесія</h1>
+      <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">
+        Біблія Асистент • ЄХБ м.Суми, Україна
+      </div>
+    </div>
+    <button id="controls-toggle-btn" title="Показати налаштування">⚙️</button>
+  </header>
+
+  <section id="controls" class="visible">
+    <select id="model" title="Модель AI"></select>
+    <div id="controls-row2">
+      <button id="help-btn">🆘 Допомога</button>
+      <button id="theme-btn">🌙 Тема</button>
+    </div>
+  </section>
+
+  <section id="chat" aria-live="polite"></section>
+
+  <section id="input-area">
+    <input id="user-input" type="text" placeholder="Напишіть запитання про Біблію..." />
+    <button id="send-btn">Надіслати</button>
+  </section>
+</main>
+
+<!-- MODAL: RENAME SESSION -->
+<div id="rename-backdrop" class="modal-backdrop">
+  <div class="modal">
+    <h2>📝 Перейменувати сесію</h2>
+    <input id="rename-input" class="rename-input" type="text" placeholder="Назва сесії">
+    <div class="modal-footer">
+      <button id="cancel-rename" class="btn-secondary">Скасувати</button>
+      <button id="confirm-rename" class="btn-primary">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: HELP -->
+<div id="help-backdrop" class="modal-backdrop">
+  <div class="modal">
+    <h2>📚 Допомога</h2>
+    <div style="line-height: 1.6; font-size: 14px;">
+      <h3>🗂️ Робота з сесіями</h3>
+      <p>• <strong>Нова сесія:</strong> Натисніть "➕ Нова" щоб створити новий чат</p>
+      <p>• <strong>Перемикання:</strong> Клікніть на будь-яку сесію щоб переключитися</p>
+      <p>• <strong>Перейменування:</strong> Натисніть "✏️" біля назви сесії</p>
+      <p>• <strong>Видалення:</strong> Натисніть "🗑️" щоб видалити сесію</p>
+      
+      <h3>📖 Біблійні посилання</h3>
+      <p>• Клікніть на будь-яке посилання на Біблію щоб побачити текст</p>
+      <p>• Підтримуються формати: (Пс. 23:1), (Буття 1:1-3), (Ів. 3:16)</p>
+      <p>• Можна переглядати всю главу цілком</p>
+      
+      <h3>💡 Приклади питань</h3>
+      <p>• "Надрукуй Псалом 23 повністю"</p>
+      <p>• "Поясни притчу про блудного сина"</p>
+      <p>• "Порівняй Івана 3:16 у різних перекладах"</p>
+      
+      <h3>📱 Мобільна версія</h3>
+      <p>• Натисніть "☰" щоб відкрити меню сесій</p>
+      <p>• Сесії автоматично зберігаються</p>
+    </div>
+    <div class="modal-footer">
+      <button id="close-help" class="btn-primary">Зрозуміло!</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: BIBLE VERSES -->
+<div id="verse-modal" class="modal-backdrop">
+  <!-- Content будет добавляться динамически -->
+</div>
+
+<script>
+/* =========================
+  BIBLE REFERENCES HANDLING
+  ========================= */
+
+// Единый массив всех книг с альтернативными названиями
+const BOOK_NAMES = [
+  ["Буття", "Бут."],
+  ["Вихід", "Вих."],
+  ["Левіт", "Лев."],
+  ["Числа", "Чис."],
+  ["Второзаконня", "Втор."],
+  ["Ісуса Навина", "Нав.", "Ісус Навин"],
+  ["Суддів", "Суд.", "Судді"],
+  ["Рути", "Рут.", "Рут"],
+  ["1 Самуїлова", "1 Сам.", "1Сам."],
+  ["2 Самуїлова", "2 Сам.", "2Сам."],
+  ["1 Царів", "1 Цар.", "1Цар."],
+  ["2 Царів", "2 Цар.", "2Цар."],
+  ["1 Хронік", "1 Хр.", "1Хр."],
+  ["2 Хронік", "2 Хр.", "2Хр."],
+  ["Ездри", "Езд.", "Ездра", "Ездр."],
+  ["Неємії", "Неєм.", "Неемія", "Неем."],
+  ["Есфирі", "Есф.", "Естер", "Ест."],
+  ["Йова", "Йов."],
+  ["Псалми", "Пс.", "Псалом"],
+  ["Приповісті Соломонові", "Прип.", "Приповісті", "Пр."],
+  ["Екклезіаст", "Еккл.", "Екклезіяст", "Екл."],
+  ["Пісня Соломона", "Піс.", "Пісня над піснями", "Пісн."],
+  ["Ісаї", "Іс.", "Ісая"],
+  ["Єремії", "Єр."],
+  ["Плач Єремії", "Плач", "Пл.Єр."],
+  ["Єзекиїла", "Єз.", "Єзекіїль"],
+  ["Даниїла", "Дан.", "Даниїл"],
+  ["Осії", "Ос.", "Осія"],
+  ["Йоіла", "Йоіл.", "Йоіл"],
+  ["Амоса", "Ам.", "Амос"],
+  ["Авдія", "Авд.", "Овдій", "Овд."],
+  ["Йони", "Йона", "Йон."],
+  ["Михея", "Мих.", "Михей"],
+  ["Наума", "Наум"],
+  ["Авакума", "Ав.", "Авакум"],
+  ["Софонії", "Соф.", "Софонія"],
+  ["Аггея", "Агг.", "Огій", "Ог."],
+  ["Захарії", "Зах.", "Захарія"],
+  ["Малахії", "Мал.", "Малахія"],
+  ["Матвія", "Матв.", "Мт."],
+  ["Марка", "Марк.", "Мр."],
+  ["Луки", "Лук.", "Лк."],
+  ["Івана", "Ів."],
+  ["Дії апостолів", "Дії", "Дії Апостолів"],
+  ["Римлян", "Рим."],
+  ["1 Коринтян", "1 Кор.", "1Кор."],
+  ["2 Коринтян", "2 Кор.", "2Кор."],
+  ["Галатів", "Гал."],
+  ["Ефесян", "Еф."],
+  ["Филипян", "Фил.", "Филип'ян"],
+  ["Колоссян", "Кол.", "Колосян"],
+  ["1 Солунян", "1 Сол.", "1Сол."],
+  ["2 Солунян", "2 Сол.", "2Сол."],
+  ["1 Тимофія", "1 Тим.", "1Тим."],
+  ["2 Тимофія", "2 Тим.", "2Тим."],
+  ["Тита", "Тит"],
+  ["Филимона", "Филм.", "Флм."],
+  ["Євреїв", "Євр."],
+  ["Якова", "Як."],
+  ["1 Петра", "1 Пет.", "1Пет."],
+  ["2 Петра", "2 Пет.", "2Пет."],
+  ["1 Івана", "1 Ів.", "1Ів."],
+  ["2 Івана", "2 Ів.", "2Ів."],
+  ["3 Івана", "3 Ів.", "3Ів."],
+  ["Юди", "Юд."],
+  ["Об'явлення Івана Богослова", "Об'явл."]
+];
+
+// Создаем Map для быстрого поиска
+const BOOK_INDEX_MAP = new Map();
+BOOK_NAMES.forEach((bookVariants, index) => {
+  bookVariants.forEach(variant => {
+    BOOK_INDEX_MAP.set(variant, index + 1);
+    BOOK_INDEX_MAP.set(variant.replace(/\.$/, ""), index + 1);
+  });
+});
+
+// Формируем строку для промпта
+const BOOKS_LIST_FOR_PROMPT = BOOK_NAMES
+  .map(variants => variants.join(", "))
+  .join("; ");
+
+// Улучшенная функция поиска номера книги
+function getBookNumber(bookName) {
+  if (!bookName) return null;
+  
+  const normalized = bookName.trim();
+  
+  if (BOOK_INDEX_MAP.has(normalized)) {
+    return BOOK_INDEX_MAP.get(normalized);
+  }
+  
+  const withoutDot = normalized.replace(/\.$/, "");
+  if (BOOK_INDEX_MAP.has(withoutDot)) {
+    return BOOK_INDEX_MAP.get(withoutDot);
+  }
+  
+  const lowerNormalized = normalized.toLowerCase();
+  for (let [key, value] of BOOK_INDEX_MAP) {
+    if (key.toLowerCase() === lowerNormalized) {
+      return value;
+    }
+  }
+  
+  return null;
+}
+
+/* =========================
+  API & SETTINGS
+  ========================= */
+const encrypted = "Z3NrX1NUelQyS1FFQko3MGNDb1hDSllaV0dkeWIzRlk5OHJHN2xvWXUxSmc1SnV0VFZOSzIyVHY=";
+const apiKey = atob(encrypted);
+const API_BASE = "https://api.groq.com/openai/v1";
+const API_URL = `${API_BASE}/chat/completions`;
+const MODELS_URL = `${API_BASE}/models`;
+
+const DEFAULT_PROMPT = `Ти — асистент-богослов і знавець Біблії. Відповідай стисло, точно і з повагою.
+
+ВАЖЛИВО! При згадуванні біблійних книг використовуй ТІЛЬКИ ці назви:
+${BOOKS_LIST_FOR_PROMPT}
+
+Дотримуйся цих правил:
+- Завжди тримайся біблійної теми, уникай оффтопу.
+- Якщо наводиш цитати, вказуй книгу, розділ і вірші у форматі (Книга число:число).
+- За можливості пояснюй контекст (хто говорить, кому, у якій ситуації).
+- Використовуй переклад Огієнка як основний при цитуванні.
+- При згадуванні біблійних джерел ЗАВЖДИ використовуй формат (Книга число:число) у круглих дужках.
+- Коли доречно, додавай порівняння з іншими українськими перекладами і коротко коментуй різницю.
+- Коротко додавай богословські коментарі, чітко відділяючи їх від тексту Писання.
+- Відповідай українською мовою.
+- Подавай цитати з номерами віршів і завжди вказуй джерело у круглих дужках після цитати.
+- НЕ вигадуй інших назв книг, крім зазначених вище!`;
+
+const SETTINGS = {
+ systemPrompt: DEFAULT_PROMPT,
+ defaultModel: "meta-llama/llama-4-maverick-17b-128e-instruct",
+ temperature: 0.7,
+ maxTokens: 1500,
+ highlightRefs: true,
+ boldKeywords: true,
+ keywords: "віра, благодать, спасіння, любов, прощення"
+};
+
+// Функция показа модалки с библейским текстом
+function showVerseModal(title, content, bookNum, chapter) {
+  const modal = document.getElementById("verse-modal");
+  modal.style.display = "flex";
+  modal.innerHTML = `
+    <div class="modal">
+      <h2>📖 ${title}</h2>
+      <div class="verse-content">${content}</div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="show-chapter">Показати всю главу</button>
+        <button class="btn-primary" id="close-verse-modal">Закрити</button>
+      </div>
+    </div>`;
+  
+  modal.querySelector("#close-verse-modal").addEventListener("click", () => {
+    modal.style.display = "none";
+  });
+  
+  modal.querySelector("#show-chapter").addEventListener("click", async () => {
+    const button = modal.querySelector("#show-chapter");
+    const originalText = button.textContent;
+    button.innerHTML = 'Завантаження... <span class="loading-spinner"></span>';
+    button.disabled = true;
+    
+    try {
+      const chapterText = await window.bible.getChapterText(bookNum, chapter);
+      const formatted = chapterText
+        .replace(/\s*(\d+\.)/g, "<br><b>$1</b>")
+        .replace(/^<br>/, "");
+      modal.querySelector(".verse-content").innerHTML = formatted;
+      modal.querySelector("h2").textContent = `📖 ${title.split(':')[0]} - вся глава ${chapter}`;
+      button.style.display = 'none';
+    } catch (error) {
+      button.textContent = 'Помилка завантаження';
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 2000);
+    }
+  });
+  
+  modal.addEventListener("click", (e) => {
+    if (e.target.id === "verse-modal") {
+      modal.style.display = "none";
+    }
+  });
+}
+
+// Обработчик кликов по библейским ссылкам
+function attachBibleRefHandlers() {
+  document.querySelectorAll(".bible-ref").forEach(el => {
+    if (el.dataset.bound) return;
+    el.dataset.bound = "1";
+    
+    el.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const refText = el.innerText.trim();
+      const match = refText.match(/(.+?)\s+(\d+):([\d,\-\s]+)/);
+      if (!match) return;
+      
+      const [, bookNameRaw, chapter, verseStr] = match;
+      const bookName = bookNameRaw.trim();
+      
+      const bookNum = getBookNumber(bookName);
+      if (!bookNum) { 
+        alert("Невідома книга: " + bookName); 
+        return; 
+      }
+
+      el.style.opacity = '0.6';
+      el.style.cursor = 'wait';
+
+      try {
+        let verses = [];
+        
+        if (verseStr.includes(",") || verseStr.includes("-")) {
+          verses = await window.bible.getVersesRange(bookNum, chapter, verseStr);
+        } else {
+          const v = await window.bible.getVerse(bookNum, chapter, verseStr);
+          if (v) verses = [v];
+        }
+
+        if (verses.length) {
+          const html = verses.map(v => `<b>${v.number}.</b> ${v.text}`).join("<br>");
+          showVerseModal(`${bookName} ${chapter}:${verseStr}`, html, bookNum, chapter);
+        } else {
+          alert("Стих(и) не знайдено");
+        }
+      } catch (error) {
+        console.error("Error loading bible verse:", error);
+        alert("Помилка завантаження тексту Біблії");
+      } finally {
+        el.style.opacity = '1';
+        el.style.cursor = 'pointer';
+      }
+    });
+  });
+}
+
+/* =========================
+  SESSIONS MANAGEMENT
+  ========================= */
+class SessionManager {
+ constructor() {
+   this.sessions = new Map();
+   this.currentSessionId = null;
+   this.sessionCounter = 0;
+   this.loadSessions();
+ }
+
+ createSession(title = null) {
+   const id = `session_${Date.now()}_${++this.sessionCounter}`;
+   const session = {
+     id,
+     title: title || `Сесія ${this.sessionCounter}`,
+     messages: [{ role: "system", content: SETTINGS.systemPrompt }],
+     created: Date.now(),
+     lastMessage: null
+   };
+   
+   this.sessions.set(id, session);
+   this.currentSessionId = id;
+   this.saveSessions();
+   this.renderSessions();
+   this.updateUI();
+   this.clearAndRenderChat();
+   return id;
+ }
+
+ switchSession(id) {
+   if (!this.sessions.has(id)) return false;
+   this.currentSessionId = id;
+   this.updateUI();
+   this.clearAndRenderChat();
+   return true;
+ }
+
+ getCurrentSession() {
+   return this.sessions.get(this.currentSessionId);
+ }
+
+ addMessage(role, content) {
+   const session = this.getCurrentSession();
+   if (!session) return;
+   
+   session.messages.push({ role, content });
+   if (role === 'user') {
+     session.lastMessage = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+     if (!session.title || session.title.startsWith('Сесія')) {
+       session.title = content.substring(0, 30) + (content.length > 30 ? '...' : '');
+     }
+   }
+   
+   this.saveSessions();
+   this.renderSessions();
+ }
+
+ renameSession(id, newTitle) {
+   const session = this.sessions.get(id);
+   if (session) {
+     session.title = newTitle || `Сесія ${id.split('_')[2]}`;
+     this.saveSessions();
+     this.renderSessions();
+     this.updateUI();
+   }
+ }
+
+ deleteSession(id) {
+   if (this.sessions.size <= 1) return false;
+   
+   this.sessions.delete(id);
+   
+   if (this.currentSessionId === id) {
+     const remainingSessions = Array.from(this.sessions.keys());
+     this.currentSessionId = remainingSessions[remainingSessions.length - 1];
+   }
+   
+   this.saveSessions();
+   this.renderSessions();
+   this.updateUI();
+   this.clearAndRenderChat();
+   return true;
+ }
+
+ clearCurrentSession() {
+   const session = this.getCurrentSession();
+   if (session) {
+     session.messages = [{ role: "system", content: SETTINGS.systemPrompt }];
+     session.lastMessage = null;
+     this.saveSessions();
+     this.renderSessions();
+     this.clearAndRenderChat();
+   }
+ }
+
+ clearAndRenderChat() {
+   const chat = document.getElementById('chat');
+   chat.innerHTML = '';
+   this.renderChat();
+ }
+
+ saveSessions() {
+   const data = {
+     sessions: Array.from(this.sessions.entries()),
+     currentSessionId: this.currentSessionId,
+     sessionCounter: this.sessionCounter
+   };
+   localStorage.setItem('bibleChatSessions', JSON.stringify(data));
+ }
+
+ loadSessions() {
+   try {
+     const data = JSON.parse(localStorage.getItem('bibleChatSessions') || '{}');
+     if (data.sessions && data.sessions.length > 0) {
+       this.sessions = new Map(data.sessions);
+       this.currentSessionId = data.currentSessionId;
+       this.sessionCounter = data.sessionCounter || 0;
+       
+       if (!this.sessions.has(this.currentSessionId)) {
+         this.currentSessionId = Array.from(this.sessions.keys())[0];
+       }
+     } else {
+       this.createSession('Початкова сесія');
+     }
+   } catch (e) {
+     this.createSession('Початкова сесія');
+   }
+ }
+
+ renderSessions() {
+   const container = document.getElementById('sessions-list');
+   container.innerHTML = '';
+
+   const sortedSessions = Array.from(this.sessions.values())
+     .sort((a, b) => b.created - a.created);
+
+   if (sortedSessions.length === 0) {
+     container.innerHTML = `
+       <div class="empty-state">
+         <h3>Немає сесій</h3>
+         <p>Створіть нову сесію щоб почати чат</p>
+       </div>
+     `;
+     return;
+   }
+
+   sortedSessions.forEach(session => {
+     const isActive = session.id === this.currentSessionId;
+     const div = document.createElement('div');
+     div.className = `session-item ${isActive ? 'active' : ''}`;
+     div.dataset.sessionId = session.id;
+     
+     div.innerHTML = `
+       <div style="flex: 1; min-width: 0;">
+         <div class="session-title">${escapeHTML(session.title)}</div>
+         ${session.lastMessage ? `<div class="session-subtitle">${escapeHTML(session.lastMessage)}</div>` : ''}
+       </div>
+       <div class="session-actions">
+         <button class="session-action-btn rename-btn" title="Перейменувати">✏️</button>
+         <button class="session-action-btn delete-btn" title="Видалити">🗑️</button>
+       </div>
+     `;
+     
+     div.addEventListener('click', (e) => {
+       if (e.target.classList.contains('session-action-btn')) return;
+       this.switchSession(session.id);
+       if (window.innerWidth <= 768) {
+         closeSidebar();
+       }
+     });
+     
+     div.querySelector('.rename-btn').addEventListener('click', (e) => {
+       e.stopPropagation();
+       showRenameModal(session.id, session.title);
+     });
+     
+     div.querySelector('.delete-btn').addEventListener('click', (e) => {
+       e.stopPropagation();
+       if (confirm('Видалити цю сесію?')) {
+         this.deleteSession(session.id);
+       }
+     });
+     
+     container.appendChild(div);
+   });
+ }
+
+ updateUI() {
+   const session = this.getCurrentSession();
+   if (session) {
+     document.getElementById('current-session-title').textContent = session.title;
+   }
+ }
+
+ renderChat() {
+   const session = this.getCurrentSession();
+   
+   if (!session) {
+     const chat = document.getElementById('chat');
+     chat.innerHTML = '<div class="empty-state"><h3>Немає активної сесії</h3></div>';
+     return;
+   }
+
+   const messages = session.messages.filter(msg => msg.role !== 'system');
+   
+   if (messages.length === 0) {
+     appendMsg("assistant", 
+       `<span class="muted">🙏 Вітаю! Я - ваш AI асистент для вивчення Біблії. Задавайте будь-які питання про Святе Письмо!</span>`, 
+       true
+     );
+   } else {
+     messages.forEach(msg => {
+       if (msg.role === 'user') {
+         appendMsg('user', msg.content);
+       } else if (msg.role === 'assistant') {
+         const formatted = saferFormatAssistant(msg.content);
+         appendMsg('assistant', formatted, true);
+       }
+     });
+   }
+   
+   setTimeout(() => {
+     attachBibleRefHandlers();
+   }, 100);
+ }
+
+ getAllSessions() {
+   return Array.from(this.sessions.values());
+ }
+
+ importSessions(sessionsData) {
+   try {
+     sessionsData.forEach(session => {
+       if (session.id && session.title && session.messages) {
+         this.sessions.set(session.id, session);
+       }
+     });
+     this.saveSessions();
+     this.renderSessions();
+     return true;
+   } catch (e) {
+     return false;
+   }
+ }
+}
+
+/* =========================
+  GLOBAL STATE
+  ========================= */
+let sessionManager;
+let isLoading = false;
+
+/* =========================
+  UTILITY FUNCTIONS
+  ========================= */
+function escapeHTML(str) {
+ return (str ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+function linkify(htmlEscaped) {
+ return htmlEscaped.replace(/(https?:\/\/[^\s)<>"]+)/g, '<a class="inline" href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+
+function highlightBibleRefs(htmlEscaped) {
+ const re = /\(([А-ЯІЇЄҐа-яіїєґ\.\s\d]*\s+\d{1,3}:[\d,\-\s]+)\)/g;
+ return htmlEscaped.replace(re, '<span class="bible-ref">$1</span>');
+}
+
+function boldifyKeywords(htmlEscaped, keywordsCSV) {
+ if (!keywordsCSV) return htmlEscaped;
+ const parts = keywordsCSV.split(",").map(s => s.trim()).filter(Boolean);
+ if (!parts.length) return htmlEscaped;
+ const words = parts.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+ const re = new RegExp(`\\b(${words.join("|")})\\b`, "gi");
+ return htmlEscaped.replace(re, '<strong>$1</strong>');
+}
+
+function saferFormatAssistant(raw) {
+ let out = escapeHTML(raw);
+ out = linkify(out);
+ if (SETTINGS.highlightRefs) out = highlightBibleRefs(out);
+ if (SETTINGS.boldKeywords) out = boldifyKeywords(out, SETTINGS.keywords || "");
+ return out.replace(/\n/g, "<br>");
+}
+
+/* =========================
+  UI FUNCTIONS
+  ========================= */
+function appendMsg(role, htmlOrText, alreadySafeHTML = false) {
+ const chat = document.getElementById('chat');
+ const div = document.createElement('div');
+ div.className = `msg ${role === 'assistant' ? 'ai' : 'you'}`;
+ const safe = alreadySafeHTML ? htmlOrText : escapeHTML(htmlOrText);
+ div.innerHTML = `<span class="role">${role === 'assistant' ? 'AI' : 'Ви'}:</span> <span class="text">${safe}</span>`;
+ chat.appendChild(div);
+ chat.scrollTop = chat.scrollHeight;
+ 
+ if (role === 'assistant') {
+   setTimeout(() => {
+     attachBibleRefHandlers();
+   }, 10);
+ }
+}
+
+/* =========================
+  SIDEBAR MANAGEMENT (MOBILE)
+  ========================= */
+function openSidebar() {
+ document.getElementById('sidebar').classList.add('open');
+ document.getElementById('sidebar-overlay').classList.add('open');
+ document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+ document.getElementById('sidebar').classList.remove('open');
+ document.getElementById('sidebar-overlay').classList.remove('open');
+ document.body.style.overflow = '';
+}
+
+/* =========================
+  MODALS
+  ========================= */
+let renameSessionId = null;
+
+function showRenameModal(sessionId, currentTitle) {
+ renameSessionId = sessionId;
+ const input = document.getElementById('rename-input');
+ input.value = currentTitle;
+ document.getElementById('rename-backdrop').style.display = 'flex';
+ setTimeout(() => input.focus(), 100);
+}
+
+function hideRenameModal() {
+ document.getElementById('rename-backdrop').style.display = 'none';
+ renameSessionId = null;
+}
+
+function showHelpModal() {
+ document.getElementById('help-backdrop').style.display = 'flex';
+}
+
+function hideHelpModal() {
+ document.getElementById('help-backdrop').style.display = 'none';
+}
+
+/* =========================
+  API FUNCTIONS
+  ========================= */
+async function loadModels() {
+ const modelSel = document.getElementById('model');
+ modelSel.innerHTML = "";
+ try {
+   const res = await fetch(MODELS_URL, { headers: { "Authorization": `Bearer ${apiKey}` }});
+   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+   const data = await res.json();
+   const models = data?.data || [];
+
+   models.forEach(m => {
+     const opt = document.createElement('option');
+     opt.value = m.id;
+     opt.textContent = m.id;
+     modelSel.appendChild(opt);
+   });
+
+   if ([...modelSel.options].some(o => o.value === SETTINGS.defaultModel)) {
+     modelSel.value = SETTINGS.defaultModel;
+   } else if (modelSel.options.length > 0) {
+     modelSel.selectedIndex = 0;
+   }
+
+ } catch (e) {
+   modelSel.innerHTML = `<option value="">Помилка завантаження моделей</option>`;
+   console.error("Model loading error:", e);
+ }
+}
+
+async function sendMessage() {
+ if (isLoading) return;
+ const input = document.getElementById('user-input');
+ const modelSel = document.getElementById('model');
+ const msg = (input.value || "").trim();
+ if (!msg) return;
+
+ if (!sessionManager.getCurrentSession()) {
+   sessionManager.createSession();
+ }
+
+ appendMsg("user", msg);
+ sessionManager.addMessage("user", msg);
+ input.value = "";
+ isLoading = true;
+ document.getElementById('send-btn').disabled = true;
+
+ try {
+   const session = sessionManager.getCurrentSession();
+   const res = await fetch(API_URL, {
+     method: "POST",
+     headers: {
+       "Content-Type": "application/json",
+       "Authorization": `Bearer ${apiKey}`
+     },
+     body: JSON.stringify({
+       model: modelSel.value || SETTINGS.defaultModel,
+       messages: session.messages,
+       temperature: SETTINGS.temperature,
+       max_tokens: SETTINGS.maxTokens
+     })
+   });
+
+   if (!res.ok) {
+     const t = await res.text().catch(() => "");
+     throw new Error(`HTTP ${res.status}: ${t || res.statusText}`);
+   }
+
+   const data = await res.json();
+   const reply = data?.choices?.[0]?.message?.content || "Немає відповіді.";
+   
+   sessionManager.addMessage("assistant", reply);
+   const formatted = saferFormatAssistant(reply);
+   appendMsg("assistant", formatted, true);
+
+   hideControlsAfterFirstMessage();
+
+ } catch (err) {
+   appendMsg("assistant", `<span class="muted">Помилка: ${escapeHTML(err.message)}</span>`, true);
+ } finally {
+   isLoading = false;
+   document.getElementById('send-btn').disabled = false;
+ }
+}
+
+/* =========================
+  THEME MANAGEMENT
+  ========================= */
+function toggleTheme() {
+ const currentTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+ applyTheme(currentTheme);
+ localStorage.setItem('theme', currentTheme);
+}
+
+function applyTheme(theme) {
+ if (theme === 'dark') {
+   document.body.setAttribute('data-theme', 'dark');
+   document.getElementById('theme-btn').textContent = '☀️ Тема';
+ } else {
+   document.body.removeAttribute('data-theme');
+   document.getElementById('theme-btn').textContent = '🌙 Тема';
+ }
+}
+
+/* =========================
+  CONTROLS MANAGEMENT
+  ========================= */
+let controlsVisible = true;
+let firstMessageSent = false;
+
+function toggleControls() {
+  const controls = document.getElementById('controls');
+  const toggleBtn = document.getElementById('controls-toggle-btn');
+  
+  controlsVisible = !controlsVisible;
+  
+  if (controlsVisible) {
+    controls.classList.remove('hidden');
+    controls.classList.add('visible');
+    toggleBtn.textContent = '⚙️';
+    toggleBtn.title = 'Сховати налаштування';
+  } else {
+    controls.classList.remove('visible');
+    controls.classList.add('hidden');
+    toggleBtn.textContent = '🔧';
+    toggleBtn.title = 'Показати налаштування';
+  }
+}
+
+function hideControlsAfterFirstMessage() {
+  if (!firstMessageSent && controlsVisible) {
+    firstMessageSent = true;
+    setTimeout(() => {
+      toggleControls();
+    }, 1000);
+  }
+}
+
+/* =========================
+  PUBLIC API
+  ========================= */
+window.BibleChatAPI = {
+ createSession: (title) => sessionManager.createSession(title),
+ switchSession: (id) => sessionManager.switchSession(id),
+ renameSession: (id, title) => sessionManager.renameSession(id, title),
+ deleteSession: (id) => sessionManager.deleteSession(id),
+ getCurrentSession: () => sessionManager.getCurrentSession(),
+ getAllSessions: () => sessionManager.getAllSessions(),
+ 
+ updateSettings: function(newSettings) {
+   Object.assign(SETTINGS, newSettings);
+   sessionManager.sessions.forEach(session => {
+     if (session.messages[0]?.role === 'system') {
+       session.messages[0].content = SETTINGS.systemPrompt;
+     }
+   });
+   sessionManager.saveSessions();
+ },
+ 
+ getSettings: () => ({...SETTINGS}),
+ setTheme: applyTheme,
+ toggleTheme,
+ 
+ sendMessage: function(message) {
+   document.getElementById('user-input').value = message;
+   sendMessage();
+ },
+ 
+ clearCurrentSession: () => {
+   sessionManager.clearCurrentSession();
+   appendMsg("assistant", `<span class="muted">Сесія очищена. Готовий відповідати на ваші запитання про Біблію!</span>`, true);
+ },
+ 
+ exportSessions: () => JSON.stringify(sessionManager.getAllSessions(), null, 2),
+ importSessions: (jsonData) => {
+   try {
+     const sessions = JSON.parse(jsonData);
+     return sessionManager.importSessions(sessions);
+   } catch {
+     return false;
+   }
+ }
+};
+
+/* =========================
+  EVENT LISTENERS
+  ========================= */
+document.addEventListener('DOMContentLoaded', async () => {
+ sessionManager = new SessionManager();
+ 
+ const savedTheme = localStorage.getItem('theme') || 'light';
+ applyTheme(savedTheme);
+ 
+ sessionManager.renderSessions();
+ sessionManager.updateUI();
+ sessionManager.renderChat();
+ 
+ // Основные кнопки
+ document.getElementById('new-session-btn').addEventListener('click', () => {
+   sessionManager.createSession();
+   if (window.innerWidth <= 768) {
+     closeSidebar();
+   }
+ });
+ 
+ document.getElementById('send-btn').addEventListener('click', sendMessage);
+ document.getElementById('user-input').addEventListener('keypress', (e) => {
+   if (e.key === 'Enter') sendMessage();
+ });
+ 
+ document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+ document.getElementById('help-btn').addEventListener('click', showHelpModal);
+ 
+ // Мобильное меню
+ document.getElementById('mobile-menu-btn').addEventListener('click', openSidebar);
+ document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+ 
+ // Модальные окна
+ document.getElementById('close-help').addEventListener('click', hideHelpModal);
+ document.getElementById('help-backdrop').addEventListener('click', (e) => {
+   if (e.target.id === 'help-backdrop') hideHelpModal();
+ });
+ 
+ document.getElementById('cancel-rename').addEventListener('click', hideRenameModal);
+ document.getElementById('confirm-rename').addEventListener('click', () => {
+   const newTitle = document.getElementById('rename-input').value.trim();
+   if (newTitle && renameSessionId) {
+     sessionManager.renameSession(renameSessionId, newTitle);
+   }
+   hideRenameModal();
+ });
+ 
+ document.getElementById('rename-backdrop').addEventListener('click', (e) => {
+   if (e.target.id === 'rename-backdrop') hideRenameModal();
+ });
+ 
+ document.getElementById('rename-input').addEventListener('keypress', (e) => {
+   if (e.key === 'Enter') {
+     document.getElementById('confirm-rename').click();
+   }
+ });
+ 
+ // Закрытие сайдбара по Escape
+ document.addEventListener('keydown', (e) => {
+   if (e.key === 'Escape') {
+     if (document.getElementById('sidebar').classList.contains('open')) {
+       closeSidebar();
+     }
+     // Закрываем модалку с библейскими стихами
+     const verseModal = document.getElementById('verse-modal');
+     if (verseModal.style.display === 'flex') {
+       verseModal.style.display = 'none';
+     }
+   }
+ });
+ 
+ // Управление панелью контролов
+ document.getElementById('controls-toggle-btn').addEventListener('click', toggleControls);
+ 
+ // Загружаем модели
+ await loadModels();
+ 
+ // Фокус на input
+ document.getElementById('user-input').focus();
+ 
+ // Ждем загрузки Bible API
+ if (typeof window.bible === 'undefined') {
+   console.log('Ожидание загрузки Bible API...');
+   const checkBibleAPI = setInterval(() => {
+     if (typeof window.bible !== 'undefined') {
+       console.log('Bible API загружен успешно!');
+       clearInterval(checkBibleAPI);
+     }
+   }, 500);
+ } else {
+   console.log('Bible API уже доступен!');
+ }
+ 
+ console.log('BibleChat with Sessions и улучшенные Bible Links готов!');
+ console.log('API доступен через window.BibleChatAPI');
+ 
+ // Отладочная информация
+ console.log('Загружено книг:', BOOK_NAMES.length);
+ console.log('Индексная карта содержит:', BOOK_INDEX_MAP.size, 'записей');
+});
+</script>
+</body>
+</html>
